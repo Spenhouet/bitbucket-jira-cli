@@ -8,15 +8,38 @@ from __future__ import annotations
 
 from typing import Any
 
+import httpx
+
+from bitbucket_jira_cli.api.base import DEFAULT_TIMEOUT
 from bitbucket_jira_cli.api.base import BaseAsyncClient
+from bitbucket_jira_cli.errors import ApiError
+
+
+async def fetch_cloud_id(site: str) -> str:
+    """Resolve a site's cloudId from its public tenant_info endpoint.
+
+    Needed to address a site through the api.atlassian.com/ex/jira/{cloudId}
+    gateway (scoped-token mode). No authentication required.
+    """
+    backend = "Jira"
+    url = site.rstrip("/") + "/_edge/tenant_info"
+    async with httpx.AsyncClient(timeout=DEFAULT_TIMEOUT, follow_redirects=True) as client:
+        response = await client.get(url)
+    if response.status_code >= httpx.codes.BAD_REQUEST:
+        msg = f"could not resolve cloudId from {url}"
+        raise ApiError(backend, response.status_code, msg)
+    cloud_id = response.json().get("cloudId")
+    if not cloud_id:
+        msg = "tenant_info returned no cloudId"
+        raise ApiError(backend, response.status_code, msg)
+    return str(cloud_id)
 
 
 class JiraClient(BaseAsyncClient):
     backend = "Jira"
 
-    def __init__(self, site: str, authorization: str) -> None:
-        base = site.rstrip("/") + "/rest/api/3"
-        super().__init__(base, {"Authorization": authorization})
+    def __init__(self, base_url: str, authorization: str) -> None:
+        super().__init__(base_url, {"Authorization": authorization})
 
     # -- identity -----------------------------------------------------------
     async def myself(self) -> dict[str, Any]:

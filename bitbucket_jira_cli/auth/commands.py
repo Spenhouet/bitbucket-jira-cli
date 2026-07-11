@@ -12,6 +12,7 @@ import typer
 from bitbucket_jira_cli._async import run
 from bitbucket_jira_cli.api.bitbucket import BitbucketClient
 from bitbucket_jira_cli.api.jira import JiraClient
+from bitbucket_jira_cli.api.jira import fetch_cloud_id
 from bitbucket_jira_cli.auth.store import BACKENDS
 from bitbucket_jira_cli.auth.store import Backend
 from bitbucket_jira_cli.auth.store import basic_header
@@ -22,6 +23,7 @@ from bitbucket_jira_cli.auth.store import token_source
 from bitbucket_jira_cli.config import Config
 from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.config import save_config
+from bitbucket_jira_cli.context import jira_rest_base
 from bitbucket_jira_cli.errors import ApiError
 from bitbucket_jira_cli.errors import AuthError
 from bitbucket_jira_cli.ui import console
@@ -43,8 +45,8 @@ async def _validate_bitbucket(authorization: str) -> str:
     return str(user.get("display_name") or user.get("username") or user.get("nickname") or "?")
 
 
-async def _validate_jira(site: str, authorization: str) -> str:
-    async with JiraClient(site, authorization) as client:
+async def _validate_jira(base_url: str, authorization: str) -> str:
+    async with JiraClient(base_url, authorization) as client:
         me = await client.myself()
     return str(me.get("displayName") or me.get("emailAddress") or "?")
 
@@ -68,11 +70,12 @@ def _guide_bitbucket() -> None:
 def _guide_jira() -> None:
     console.print("[bold]Jira Cloud[/bold]")
     console.print(
-        f"[dim]Create an API token (use the plain 'Create API token' — no scope\n"
-        f"  selection needed): {ATLASSIAN_ID_URL}\n"
-        f"  bj uses Basic auth (email + token) against your site host.\n"
-        f"  Note: 'scoped' tokens only work via Atlassian's api.atlassian.com gateway,\n"
-        f"  which bj does not target — use an unscoped token.[/dim]",
+        f"[dim]Create an API token at {ATLASSIAN_ID_URL}\n"
+        f"  • Unscoped (simplest): the plain 'Create API token' button — no scopes.\n"
+        f"  • Scoped (least privilege): 'Create API token with scopes', app: Jira,\n"
+        f"    scopes read:jira-work, write:jira-work, read:jira-user. bj addresses it\n"
+        f"    through the api.atlassian.com gateway (cloudId resolved automatically).\n"
+        f"  Pick the matching method at the next prompt.[/dim]",
         highlight=False,
     )
 
@@ -128,17 +131,41 @@ def _login_bitbucket(config: Config, *, insecure: bool, token_stdin: str | None)
     success(f"Logged in to Bitbucket as {name} (token in {where}).")
 
 
+_JIRA_MODE_CHOICES = [
+    questionary.Choice("Unscoped API token — simplest (your site host)", value="site"),
+    questionary.Choice("Scoped API token — least privilege (api.atlassian.com)", value="gateway"),
+]
+
+
+def _jira_base(mode: str, site: str) -> tuple[str, str | None]:
+    """Return (rest_base_url, cloud_id) for the chosen mode, resolving cloudId."""
+    if mode == "gateway":
+        try:
+            cloud_id = run(fetch_cloud_id(site))
+        except ApiError as exc:
+            msg = f"Could not resolve the cloudId for {site}: {exc.message}"
+            raise AuthError(msg) from exc
+        return f"https://api.atlassian.com/ex/jira/{cloud_id}/rest/api/3", cloud_id
+    return site.rstrip("/") + "/rest/api/3", None
+
+
 def _login_jira(config: Config, *, insecure: bool, token_stdin: str | None) -> None:
     if token_stdin is not None:
         console.print("[bold]Jira Cloud[/bold]")
         site = (config.jira.site or "").rstrip("/")
         email = config.jira.email or ""
+        mode = config.jira.auth_mode
         if not (site and email):
             msg = "Jira --with-token needs jira.site and jira.email already configured."
             raise AuthError(msg)
         token = token_stdin
     else:
         _guide_jira()
+        mode = _ask(
+            questionary.select(
+                "Authentication method", choices=_JIRA_MODE_CHOICES, default=config.jira.auth_mode
+            )
+        )
         site = _ask(
             questionary.text(
                 "Site URL (e.g. https://your-domain.atlassian.net)",
@@ -148,13 +175,16 @@ def _login_jira(config: Config, *, insecure: bool, token_stdin: str | None) -> N
         email = _ask(questionary.text("Atlassian account email", default=config.jira.email or ""))
         token = _ask(questionary.password("API token"))
 
+    base, cloud_id = _jira_base(mode, site)
     try:
-        name = run(_validate_jira(site, basic_header(email, token)))
+        name = run(_validate_jira(base, basic_header(email, token)))
     except ApiError as exc:
         msg = f"Jira rejected the credentials: {exc.message}"
         raise AuthError(msg) from exc
     config.jira.site = site
     config.jira.email = email
+    config.jira.auth_mode = mode
+    config.jira.cloud_id = cloud_id
     where = set_token("jira", token, insecure=insecure)
     success(f"Logged in to Jira as {name} (token in {where}).")
 
@@ -223,12 +253,15 @@ def _status_jira(config: Config) -> bool:
         return False
     authorization = basic_header(config.jira.email, get_token("jira") or "")
     try:
-        name = run(_validate_jira(config.jira.site, authorization))
-    except ApiError as exc:
-        console.print(f"[red]✗[/red] Jira: token from {src} rejected — {exc.message}")
+        name = run(_validate_jira(jira_rest_base(config), authorization))
+    except (ApiError, AuthError) as exc:
+        detail = exc.message if isinstance(exc, ApiError) else str(exc)
+        console.print(f"[red]✗[/red] Jira: token from {src} rejected — {detail}")
         return False
+    mode = "gateway" if config.jira.auth_mode == "gateway" else "site"
     console.print(
-        f"[green]✓[/green] Jira: logged in as [bold]{name}[/bold] at {config.jira.site} ({src})"
+        f"[green]✓[/green] Jira: logged in as [bold]{name}[/bold] "
+        f"at {config.jira.site} ({mode}, {src})"
     )
     return True
 

@@ -35,6 +35,8 @@ bitbucket:
 jira:
   site: https://your-domain.atlassian.net
   email: you@example.com
+  auth_mode: site            # site (unscoped) | gateway (scoped API token)
+  cloud_id: null             # set automatically in gateway mode
 branch_key:
   enabled: true
   pattern: ([A-Za-z][A-Za-z0-9]+-\d+)
@@ -76,14 +78,23 @@ For granular API-token scopes, **write does not imply read** — tick both boxes
 for Pull Requests and Pipelines. `write:repository` is not needed (`bj` only
 reads and clones repositories).
 
-### Jira — unscoped API token
+### Jira — two token modes
 
-Use the plain **"Create API token"** button (no scope selection). `bj` sends it
-as Basic auth (email + token) against your `*.atlassian.net` site, the same as
-the `jira` and `go-jira` CLIs.
+`bj auth login` asks which you're using:
 
-Do **not** use a *scoped* Jira token: scoped tokens are only accepted on
-Atlassian's `api.atlassian.com/ex/jira/{cloudId}` gateway, which `bj` does not
-target — they return 401 against the site host. (If `bj` later adds gateway
-support, the equivalent scopes would be `read:jira-work`, `write:jira-work`,
-`read:jira-user`.)
+- **Unscoped (simplest)** — the plain **"Create API token"** button (no scope
+  selection). `bj` sends it as Basic auth (email + token) against your
+  `*.atlassian.net` site host, like the `jira` and `go-jira` CLIs. This becomes
+  `jira.auth_mode: site` in `config.yml`.
+- **Scoped (least privilege)** — **"Create API token with scopes"**, app
+  **Jira**, scopes `read:jira-work`, `write:jira-work`, `read:jira-user`. Scoped
+  Jira tokens are only accepted on Atlassian's `api.atlassian.com/ex/jira/{cloudId}`
+  gateway (they 401 against the site host), so `bj` resolves your site's cloudId
+  from `{site}/_edge/tenant_info` at login, stores it as `jira.cloud_id`, and
+  targets the gateway. This becomes `jira.auth_mode: gateway`.
+
+Both use the same three scopes' worth of access; the scoped token just limits
+the token itself. `write:jira-work` covers issue create/edit, comments,
+transitions and remote issue links; `read:jira-work` covers search and reads;
+`read:jira-user` covers the current-user check. Write does not imply read —
+grant both.
