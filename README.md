@@ -32,16 +32,26 @@ auto-link pull requests to tickets and drive Jira transitions.
 
 ### 1. Install
 
-```bash
-# Install as an isolated tool…
-uv tool install bitbucket-jira-cli
+**macOS and Linux**
 
-# …or run it once without installing:
-uvx bitbucket-jira-cli --help
+```bash
+curl -LsSf uvx.sh/bitbucket-jira-cli/install.sh | sh
 ```
 
-Alternatives (`pip`, prebuilt Docker image) are covered in the
-[installation docs](https://spenhouet.github.io/bitbucket-jira-cli/installation).
+**Windows**
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://uvx.sh/bitbucket-jira-cli/install.ps1 | iex"
+```
+
+Installing a specific version:
+
+```bash
+curl -LsSf uvx.sh/bitbucket-jira-cli/0.1.0/install.sh | sh
+```
+
+Alternative install methods (PyPI via `pip` / `uv`, prebuilt Docker image) are
+covered in the [installation docs](https://spenhouet.github.io/bitbucket-jira-cli/installation).
 
 ### 2. Authenticate
 

@@ -45,12 +45,15 @@ function HomepageHeader() {
 }
 
 const INSTALL_SNIPPETS = {
+  unix: `# Installs an isolated, self-updating CLI via uv.
+curl -LsSf uvx.sh/bitbucket-jira-cli/install.sh | sh`,
+  windows: `powershell -ExecutionPolicy ByPass -c "irm https://uvx.sh/bitbucket-jira-cli/install.ps1 | iex"`,
+  pip: `pip install bitbucket-jira-cli`,
   uv: `# Install as an isolated tool…
 uv tool install bitbucket-jira-cli
 
 # …or run it once without installing:
 uvx bitbucket-jira-cli --help`,
-  pip: `pip install bitbucket-jira-cli`,
   docker: `# Pull and run the prebuilt image.
 docker pull spenhouet/bitbucket-jira-cli:latest
 docker run --rm spenhouet/bitbucket-jira-cli --help`,
@@ -59,11 +62,20 @@ docker run --rm spenhouet/bitbucket-jira-cli --help`,
 function InstallTabs() {
   return (
     <Tabs groupId="install-method" queryString>
-      <TabItem value="uv" label="uv">
-        <CodeBlock language="bash">{INSTALL_SNIPPETS.uv}</CodeBlock>
+      <TabItem value="linux" label="Linux">
+        <CodeBlock language="bash">{INSTALL_SNIPPETS.unix}</CodeBlock>
+      </TabItem>
+      <TabItem value="macos" label="macOS">
+        <CodeBlock language="bash">{INSTALL_SNIPPETS.unix}</CodeBlock>
+      </TabItem>
+      <TabItem value="windows" label="Windows">
+        <CodeBlock language="powershell">{INSTALL_SNIPPETS.windows}</CodeBlock>
       </TabItem>
       <TabItem value="pip" label="pip">
         <CodeBlock language="bash">{INSTALL_SNIPPETS.pip}</CodeBlock>
+      </TabItem>
+      <TabItem value="uv" label="uv">
+        <CodeBlock language="bash">{INSTALL_SNIPPETS.uv}</CodeBlock>
       </TabItem>
       <TabItem value="docker" label="Docker">
         <CodeBlock language="bash">{INSTALL_SNIPPETS.docker}</CodeBlock>
