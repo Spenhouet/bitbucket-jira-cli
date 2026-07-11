@@ -184,8 +184,13 @@ store **two independent credentials**.
 - **Bitbucket Cloud:** app passwords are **dead in 2026** (removal 28 Jul 2026).
   Use **scoped Atlassian API tokens** via Basic auth `base64(email:token)`, or
   **repository/workspace access tokens** via `Authorization: Bearer`. Scopes for
-  `bj`: `read/write:pullrequest:bitbucket`, `read:repository:bitbucket`,
-  `read/write:pipeline:bitbucket` (write does **not** imply read — request both).
+  `bj` (7): `read:user:bitbucket` (for `GET /user`, used by auth validation),
+  `read:workspace:bitbucket` (list members for reviewer selection),
+  `read:repository:bitbucket`, `read/write:pullrequest:bitbucket`,
+  `read/write:pipeline:bitbucket`. Write does **not** imply read for granular
+  API-token scopes — request both. `read:account` is **not** a Bitbucket
+  API-token scope (it's a legacy OAuth scope); `write:repository` is not needed
+  since `bj` only reads and clones repos.
 - **Jira Cloud:** **API token + Basic auth** `base64(email:token)`. Scoped-token
   scopes: `read/write:jira-work` (or fine-grained `read/write:issue:jira`,
   `read:issue.transition:jira`, `write:comment:jira`, `read/write:issue-link:jira`).
