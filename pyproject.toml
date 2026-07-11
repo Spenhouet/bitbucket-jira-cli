@@ -173,6 +173,8 @@ skip-magic-trailing-comma = false # respects magic trailing commas
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [
   "S101",    # Assert in tests is expected
+  "S105",    # Dummy secrets/tokens in tests are not real credentials
+  "S106",    # Dummy secrets/tokens in tests are not real credentials
   "S110",    # try-except-pass detected
   "FBT001",  # Often conflicts in tests
   "PLR2004", # Magic numbers are acceptable in tests
