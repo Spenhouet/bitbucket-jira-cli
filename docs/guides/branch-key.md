@@ -7,7 +7,7 @@ title: Branch-key workflow
 
 The feature that sets `bj` apart from a plain Bitbucket client: your current git
 branch carries a Jira key, and `bj` uses it to link pull requests to tickets and
-drive Jira transitions automatically — no ticket IDs typed by hand.
+drive Jira transitions automatically, with no ticket IDs typed by hand.
 
 ## The parsing rule
 
@@ -28,10 +28,10 @@ case-tolerant and matches `PROJECT-NUMBER`:
 The first match wins and the key is upper-cased. Configure it under
 `branch_key` in `config.yml` (see [Configuration](./configuration.md)):
 
-- `pattern` — override the regex.
-- `project_prefixes` — an allow-list (e.g. `["PROJ", "ABC"]`) so stray matches
+- `pattern`: override the regex.
+- `project_prefixes`: an allow-list (e.g. `["PROJ", "ABC"]`) so stray matches
   like `utf-8` are ignored.
-- `enabled` — set to `false` to turn off all auto-linking and transitions.
+- `enabled`: set to `false` to turn off all auto-linking and transitions.
 
 ## `bj pr create`
 
@@ -57,7 +57,7 @@ done state (`transitions.on_pr_merge`, default `Done`).
 ## Graceful degradation
 
 If no key is found, Jira is not configured, or `branch_key.enabled` is `false`,
-`bj` behaves like a plain Bitbucket client — it creates or merges the PR and
+`bj` behaves like a plain Bitbucket client. It creates or merges the PR and
 skips every Jira step, printing a one-line note that no ticket was linked.
 Transition **names** are resolved to workflow **IDs** at runtime, so per-project
 Jira workflows work without any hardcoding.

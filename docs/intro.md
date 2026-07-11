@@ -16,7 +16,7 @@ auto-link pull requests to tickets and drive Jira transitions. See the
 
 ## Next steps
 
-- [Installation](./installation.md) — install with uv, pip, or Docker.
-- [Usage](./usage.md) — the three-step flow.
-- [Guides](./guides/branch-key.md) — branch keys, configuration, output formatting.
-- [Command reference](./reference/index.md) — every command, generated from the CLI.
+- [Installation](./installation.md): install with uv, pip, or Docker.
+- [Usage](./usage.md): the three-step flow.
+- [Guides](./guides/branch-key.md): branch keys, configuration, output formatting.
+- [Command reference](./reference/index.md): every command, generated from the CLI.

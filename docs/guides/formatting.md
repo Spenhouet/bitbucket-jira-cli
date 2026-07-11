@@ -18,7 +18,7 @@ bj pr list --json
 bj issue view PROJ-42 --json
 ```
 
-Unlike `gh`, `--json` takes no field list — it prints the full JSON object or
+Unlike `gh`, `--json` takes no field list. It prints the full JSON object or
 array as returned by the Bitbucket or Jira API. Pipe it into a tool of your
 choice, or use `--jq` below.
 

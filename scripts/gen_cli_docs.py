@@ -8,7 +8,7 @@ synopsis, description, arguments, options, examples, see also). Run:
     uv run python scripts/gen_cli_docs.py
 
 Output goes to docs/reference/ (wiped and regenerated each run). Pages are
-CommonMark (.md) so API notation like {workspace} and <key> is literal — the
+CommonMark (.md) so API notation like {workspace} and <key> is literal; the
 site is configured with `markdown.format: "detect"`.
 
 Typer vendors click, so the command objects are duck-typed (they expose the
@@ -47,8 +47,8 @@ DESCRIPTIONS: dict[str, str] = {
         "tickets. See the [branch-key workflow](../guides/branch-key.md) guide."
     ),
     "auth": (
-        "`bj` stores two independent credentials — one for Bitbucket, one for "
-        "Jira — because the two products use separate API tokens. Tokens go to "
+        "`bj` stores two independent credentials, one for Bitbucket and one for "
+        "Jira, because the two products use separate API tokens. Tokens go to "
         "the OS keyring by default, or a 0600 file with `--insecure-storage`. "
         "See the [environment](../../guides/environment.md) guide for the "
         "`BJ_*_TOKEN` overrides."
@@ -280,6 +280,7 @@ def _render_root(root: Any) -> str:
         "---",
         "title: bj",
         "sidebar_label: Overview",
+        "sidebar_position: 0",  # lead the Command reference section, not trail it
         "---",
         "",
         "# bj",

@@ -25,11 +25,11 @@ In a terminal, `bj` prompts for missing input (title, body, merge method),
 shows a spinner during network calls, and asks before destructive actions like
 `pr merge`, `pr close`, `pipeline stop` and `issue close`. Pass `--yes`/`-y` to
 skip a confirmation. When output is piped, `BJ_PROMPT_DISABLED` is set, or stdin
-is not a TTY, prompts and confirmations are skipped — supply everything via
+is not a TTY, prompts and confirmations are skipped, so supply everything via
 flags (use `--json` for machine-readable output).
 
 Token resolution order is env → OS keyring → `credentials.yml`; see
 [Configuration](./configuration.md). Because the two backends use separate
 credentials, you can supply one via the environment and the other via the
-keyring independently — for example, exporting `BJ_BITBUCKET_TOKEN` in CI while
+keyring independently. For example, export `BJ_BITBUCKET_TOKEN` in CI while
 Jira stays logged out.
