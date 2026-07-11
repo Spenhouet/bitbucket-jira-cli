@@ -28,6 +28,7 @@ Open a pull request for the current branch. When the branch name carries a Jira 
 | `-r, --reviewer <text>` | Reviewer account_id or {uuid}. |
 | `-d, --draft` | Create as draft. |
 | `-f, --fill` | Title/body from last commit. |
+| `-e, --editor` | Write the body in $EDITOR. |
 | `--no-jira` | Skip Jira link/transition. |
 | `--dry-run` | Print actions; write nothing. |
 | `-R, --repo <text>` | Target repo as WORKSPACE/REPO. |

@@ -27,11 +27,13 @@ Merge a pull request. If the PR's branch carries a Jira key, the linked ticket i
 
 | Option | Description |
 | --- | --- |
+| `--merge` | Merge commit. |
 | `-s, --squash` | Squash merge. |
 | `--fast-forward` | Fast-forward merge. |
 | `-d, --delete-branch` | Close source branch. |
 | `-m, --message <text>` | Merge commit message. |
 | `--no-jira` | Skip Jira transition. |
+| `-y, --yes` | Skip the confirmation prompt. |
 | `--dry-run` | Print actions; write nothing. |
 | `-R, --repo <text>` | Target repo as WORKSPACE/REPO. |
 | `--json` | Output raw JSON. |

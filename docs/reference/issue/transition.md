@@ -5,7 +5,7 @@ sidebar_label: transition
 
 # bj issue transition
 
-Transition an issue, or list available transitions when no state is given.
+Transition an issue, choosing from the available states when none is given.
 
 ## Synopsis
 
@@ -18,7 +18,7 @@ bj issue transition [OPTIONS] [KEY] [STATE]
 | Argument | Description |
 | --- | --- |
 | `KEY` | Issue key (default: from branch). |
-| `STATE` | Target state (omit to list available). |
+| `STATE` | Target state (omit to choose interactively). |
 
 ## Examples
 

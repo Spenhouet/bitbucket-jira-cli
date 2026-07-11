@@ -25,6 +25,7 @@ bj issue edit [OPTIONS] [KEY]
 | --- | --- |
 | `-s, --summary <text>` | New summary. |
 | `-b, --body <text>` | New description. |
+| `-e, --editor` | Write the body in $EDITOR. |
 
 ## See also
 

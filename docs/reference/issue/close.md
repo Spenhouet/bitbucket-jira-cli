@@ -19,6 +19,12 @@ bj issue close [OPTIONS] [KEY]
 | --- | --- |
 | `KEY` | Issue key (default: from branch). |
 
+## Options
+
+| Option | Description |
+| --- | --- |
+| `-y, --yes` | Skip the confirmation prompt. |
+
 ## See also
 
 - [`bj issue`](index.md)

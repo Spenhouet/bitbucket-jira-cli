@@ -34,6 +34,11 @@ class BitbucketClient(BaseAsyncClient):
             params["role"] = role
         return await self._paginate(f"/repositories/{workspace}", params=params, limit=limit)
 
+    async def list_workspace_members(
+        self, workspace: str, *, limit: int = 100
+    ) -> list[dict[str, Any]]:
+        return await self._paginate(f"/workspaces/{workspace}/members", limit=limit)
+
     # -- pull requests ------------------------------------------------------
     def _pr_base(self, workspace: str, repo_slug: str) -> str:
         return f"/repositories/{workspace}/{repo_slug}/pullrequests"

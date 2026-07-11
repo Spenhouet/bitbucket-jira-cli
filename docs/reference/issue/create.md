@@ -21,6 +21,7 @@ bj issue create [OPTIONS]
 | `-t, --type <text>` | Issue type. _(default: Task)_ |
 | `-s, --summary <text>` | Summary/title. |
 | `-b, --body <text>` | Description. |
+| `-e, --editor` | Write the body in $EDITOR. |
 | `--json` | Output raw JSON. |
 | `-q, --jq <text>` | Filter JSON with a jq expression. |
 
