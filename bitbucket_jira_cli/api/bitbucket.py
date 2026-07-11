@@ -45,8 +45,14 @@ class BitbucketClient(BaseAsyncClient):
         return response.json()
 
     async def list_prs(
-        self, workspace: str, repo_slug: str, *, state: str | None = None,
-        source_branch: str | None = None, query: str | None = None, limit: int = 30,
+        self,
+        workspace: str,
+        repo_slug: str,
+        *,
+        state: str | None = None,
+        source_branch: str | None = None,
+        query: str | None = None,
+        limit: int = 30,
     ) -> list[dict[str, Any]]:
         clauses = []
         if state:
@@ -116,14 +122,16 @@ class BitbucketClient(BaseAsyncClient):
     ) -> list[dict[str, Any]]:
         return await self._paginate(
             f"{self._pr_base(workspace, repo_slug)}/{pr_id}/comments",
-            params={"pagelen": 100}, limit=limit,
+            params={"pagelen": 100},
+            limit=limit,
         )
 
     async def add_pr_comment(
         self, workspace: str, repo_slug: str, pr_id: int, text: str
     ) -> dict[str, Any]:
         response = await self.request(
-            "POST", f"{self._pr_base(workspace, repo_slug)}/{pr_id}/comments",
+            "POST",
+            f"{self._pr_base(workspace, repo_slug)}/{pr_id}/comments",
             json={"content": {"raw": text}},
         )
         return response.json()
@@ -137,7 +145,8 @@ class BitbucketClient(BaseAsyncClient):
     ) -> list[dict[str, Any]]:
         return await self._paginate(
             self._pipe_base(workspace, repo_slug),
-            params={"pagelen": min(limit, 50), "sort": "-created_on"}, limit=limit,
+            params={"pagelen": min(limit, 50), "sort": "-created_on"},
+            limit=limit,
         )
 
     async def run_pipeline(

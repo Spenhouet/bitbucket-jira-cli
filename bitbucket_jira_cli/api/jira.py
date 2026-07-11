@@ -23,9 +23,7 @@ class JiraClient(BaseAsyncClient):
         return await self.get_json("/myself")
 
     # -- issues -------------------------------------------------------------
-    async def get_issue(
-        self, key: str, *, fields: list[str] | None = None
-    ) -> dict[str, Any]:
+    async def get_issue(self, key: str, *, fields: list[str] | None = None) -> dict[str, Any]:
         params = {"fields": ",".join(fields)} if fields else None
         return await self.get_json(f"/issue/{key}", params=params)
 
