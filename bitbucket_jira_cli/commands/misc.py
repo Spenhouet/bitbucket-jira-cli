@@ -8,8 +8,6 @@ from typing import Any
 
 import typer
 
-from bitbucket_jira_cli._async import run
-
 # Backend is a Literal used in a Typer signature, so it must stay a runtime
 # import (Typer resolves annotations at runtime); TC001 is a false positive.
 from bitbucket_jira_cli.auth.store import Backend  # noqa: TC001
@@ -23,6 +21,7 @@ from bitbucket_jira_cli.context import jira_client
 from bitbucket_jira_cli.errors import BjError
 from bitbucket_jira_cli.git import current_branch
 from bitbucket_jira_cli.git import parse_branch_key
+from bitbucket_jira_cli.interaction import run_with_status
 from bitbucket_jira_cli.ui import console
 
 
@@ -68,7 +67,9 @@ def browse(
         return
     ref = resolve_repo(repo)
     if target == "pr":
-        url = run(_current_branch_pr_url(config, ref.workspace, ref.repo_slug))
+        url = run_with_status(
+            "Loading pull request…", _current_branch_pr_url(config, ref.workspace, ref.repo_slug)
+        )
         _emit_url(url, no_browser=no_browser)
         return
     _emit_url(f"https://bitbucket.org/{ref}", no_browser=no_browser)
@@ -107,4 +108,4 @@ def api(
     # Ensure bitbucket_authorization errors surface early with a clean message.
     if backend == "bitbucket":
         bitbucket_authorization(config)
-    run(_run())
+    run_with_status("Requesting…", _run())

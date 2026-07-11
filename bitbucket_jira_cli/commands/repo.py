@@ -9,7 +9,6 @@ from typing import Annotated
 
 import typer
 
-from bitbucket_jira_cli._async import run
 from bitbucket_jira_cli.api.bitbucket import BitbucketClient
 from bitbucket_jira_cli.commands._common import emit
 from bitbucket_jira_cli.commands._common import resolve_repo
@@ -19,6 +18,7 @@ from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.config import save_config
 from bitbucket_jira_cli.context import bitbucket_authorization
 from bitbucket_jira_cli.errors import BjError
+from bitbucket_jira_cli.interaction import run_with_status
 from bitbucket_jira_cli.render import render_repo
 from bitbucket_jira_cli.render import render_repo_list
 from bitbucket_jira_cli.ui import console
@@ -55,17 +55,16 @@ def view(
     config = load_config()
     ref = resolve_repo(repo)
 
-    async def _run() -> None:
+    async def _run() -> dict:
         async with _bb(config) as client:
-            repo_obj = await client.get_repo(ref.workspace, ref.repo_slug)
-            if web:
-                webbrowser.open(repo_obj.get("links", {}).get("html", {}).get("href", ""))
-                return
-            if emit(repo_obj, as_json=as_json, jq=jq):
-                return
-            render_repo(repo_obj)
+            return await client.get_repo(ref.workspace, ref.repo_slug)
 
-    run(_run())
+    repo_obj = run_with_status("Loading repository…", _run())
+    if web:
+        webbrowser.open(repo_obj.get("links", {}).get("html", {}).get("href", ""))
+        return
+    if not emit(repo_obj, as_json=as_json, jq=jq):
+        render_repo(repo_obj)
 
 
 @repo_app.command(name="list")
@@ -84,14 +83,13 @@ def list_repos(
     config = load_config()
     ws = resolve_workspace(workspace, config.bitbucket.workspace)
 
-    async def _run() -> None:
+    async def _run() -> list[dict]:
         async with _bb(config) as client:
-            repos = await client.list_repos(ws, role=role, limit=limit)
-            if emit(repos, as_json=as_json, jq=jq):
-                return
-            render_repo_list(repos)
+            return await client.list_repos(ws, role=role, limit=limit)
 
-    run(_run())
+    repos = run_with_status("Loading repositories…", _run())
+    if not emit(repos, as_json=as_json, jq=jq):
+        render_repo_list(repos)
 
 
 @repo_app.command()
@@ -108,7 +106,7 @@ def clone(
             repo_obj = await client.get_repo(ref.workspace, ref.repo_slug)
         return _clone_url(repo_obj, config.git_protocol)
 
-    url = run(_run())
+    url = run_with_status("Loading repository…", _run())
     args = ["git", "clone", url]
     if directory:
         args.append(directory)

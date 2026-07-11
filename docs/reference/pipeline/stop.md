@@ -23,6 +23,7 @@ bj pipeline stop [OPTIONS] PIPELINE
 
 | Option | Description |
 | --- | --- |
+| `-y, --yes` | Skip the confirmation prompt. |
 | `-R, --repo <text>` | Target repo as WORKSPACE/REPO. |
 
 ## See also

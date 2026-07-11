@@ -7,6 +7,7 @@ from typing import Any
 from rich.table import Table
 
 from bitbucket_jira_cli.api.adf import adf_to_text
+from bitbucket_jira_cli.timefmt import relative_time
 from bitbucket_jira_cli.ui import console
 
 _PR_STATE_COLORS = {
@@ -36,12 +37,14 @@ def render_pr_list(prs: list[dict[str, Any]]) -> None:
     table.add_column("Title")
     table.add_column("State")
     table.add_column("Source", style="dim")
+    table.add_column("Updated", style="dim")
     for pr in prs:
         table.add_row(
             str(pr.get("id", "")),
             pr_row_title(pr),
             _state(str(pr.get("state", "")), _PR_STATE_COLORS),
             str(pr.get("source", {}).get("branch", {}).get("name", "")),
+            relative_time(pr.get("updated_on")),
         )
     console.print(table)
 
@@ -51,8 +54,11 @@ def render_pr(pr: dict[str, Any], comments: list[dict[str, Any]] | None = None) 
     src = pr.get("source", {}).get("branch", {}).get("name", "?")
     dst = pr.get("destination", {}).get("branch", {}).get("name", "?")
     console.print(f"[bold]#{pr.get('id')} {pr.get('title')}[/bold]")
+    updated = relative_time(pr.get("updated_on"))
+    updated_suffix = f" · updated {updated}" if updated else ""
     console.print(
-        f"{_state(str(pr.get('state', '')), _PR_STATE_COLORS)} · {author} · {src} → {dst}"
+        f"{_state(str(pr.get('state', '')), _PR_STATE_COLORS)} · {author} · "
+        f"{src} → {dst}{updated_suffix}"
     )
     url = pr.get("links", {}).get("html", {}).get("href")
     if url:
@@ -84,6 +90,7 @@ def render_issue_list(issues: list[dict[str, Any]]) -> None:
     table.add_column("Type", style="dim")
     table.add_column("Status")
     table.add_column("Summary")
+    table.add_column("Updated", style="dim")
     for issue in issues:
         fields = issue.get("fields", {})
         table.add_row(
@@ -91,6 +98,7 @@ def render_issue_list(issues: list[dict[str, Any]]) -> None:
             fields.get("issuetype", {}).get("name", ""),
             fields.get("status", {}).get("name", ""),
             fields.get("summary", ""),
+            relative_time(fields.get("updated")),
         )
     console.print(table)
 
@@ -101,7 +109,11 @@ def render_issue(issue: dict[str, Any], comments: list[dict[str, Any]] | None = 
     status = fields.get("status", {}).get("name", "?")
     issue_type = fields.get("issuetype", {}).get("name", "?")
     assignee = (fields.get("assignee") or {}).get("displayName", "Unassigned")
-    console.print(f"[yellow]{status}[/yellow] · {issue_type} · assignee: {assignee}")
+    updated = relative_time(fields.get("updated"))
+    updated_suffix = f" · updated {updated}" if updated else ""
+    console.print(
+        f"[yellow]{status}[/yellow] · {issue_type} · assignee: {assignee}{updated_suffix}"
+    )
     description = fields.get("description")
     if description:
         console.print()
@@ -168,6 +180,7 @@ def render_pipeline_list(pipelines: list[dict[str, Any]]) -> None:
     table.add_column("Status")
     table.add_column("Ref", style="dim")
     table.add_column("Trigger", style="dim")
+    table.add_column("Created", style="dim")
     for pipeline in pipelines:
         target = pipeline.get("target", {})
         table.add_row(
@@ -175,6 +188,7 @@ def render_pipeline_list(pipelines: list[dict[str, Any]]) -> None:
             _pipeline_status(pipeline),
             target.get("ref_name", ""),
             pipeline.get("trigger", {}).get("name", ""),
+            relative_time(pipeline.get("created_on")),
         )
     console.print(table)
 

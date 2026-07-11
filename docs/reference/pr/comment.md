@@ -24,6 +24,7 @@ bj pr comment [OPTIONS] [PR_ID]
 | Option | Description |
 | --- | --- |
 | `-b, --body <text>` | Comment text. |
+| `-e, --editor` | Write the comment in $EDITOR. |
 | `-R, --repo <text>` | Target repo as WORKSPACE/REPO. |
 
 ## See also

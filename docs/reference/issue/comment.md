@@ -24,6 +24,7 @@ bj issue comment [OPTIONS] [KEY]
 | Option | Description |
 | --- | --- |
 | `-b, --body <text>` | Comment text. |
+| `-e, --editor` | Write the body in $EDITOR. |
 
 ## See also
 

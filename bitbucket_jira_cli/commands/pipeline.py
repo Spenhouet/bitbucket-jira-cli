@@ -7,7 +7,6 @@ from typing import Any
 
 import typer
 
-from bitbucket_jira_cli._async import run
 from bitbucket_jira_cli.api.bitbucket import BitbucketClient
 from bitbucket_jira_cli.commands._common import emit
 from bitbucket_jira_cli.commands._common import resolve_repo
@@ -17,9 +16,11 @@ from bitbucket_jira_cli.context import bitbucket_authorization
 from bitbucket_jira_cli.errors import BjError
 from bitbucket_jira_cli.git import RepoRef
 from bitbucket_jira_cli.git import current_branch
+from bitbucket_jira_cli.interaction import confirm
+from bitbucket_jira_cli.interaction import page
+from bitbucket_jira_cli.interaction import run_with_status
 from bitbucket_jira_cli.render import render_pipeline
 from bitbucket_jira_cli.render import render_pipeline_list
-from bitbucket_jira_cli.ui import console
 from bitbucket_jira_cli.ui import success
 
 pipeline_app = typer.Typer(help="Work with Bitbucket Pipelines.", no_args_is_help=True)
@@ -27,6 +28,7 @@ pipeline_app = typer.Typer(help="Work with Bitbucket Pipelines.", no_args_is_hel
 JsonOpt = Annotated[bool, typer.Option("--json", help="Output raw JSON.")]
 JqOpt = Annotated[str | None, typer.Option("--jq", "-q", help="Filter JSON with a jq expression.")]
 RepoOpt = Annotated[str | None, typer.Option("--repo", "-R", help="Target repo as WORKSPACE/REPO.")]
+YesOpt = Annotated[bool, typer.Option("--yes", "-y", help="Skip the confirmation prompt.")]
 
 
 def _bb(config: Config) -> BitbucketClient:
@@ -59,14 +61,13 @@ def list_pipelines(
     config = load_config()
     ref = resolve_repo(repo)
 
-    async def _run() -> None:
+    async def _run() -> list[dict[str, Any]]:
         async with _bb(config) as client:
-            pipelines = await client.list_pipelines(ref.workspace, ref.repo_slug, limit=limit)
-            if emit(pipelines, as_json=as_json, jq=jq):
-                return
-            render_pipeline_list(pipelines)
+            return await client.list_pipelines(ref.workspace, ref.repo_slug, limit=limit)
 
-    run(_run())
+    pipelines = run_with_status("Loading pipelines…", _run())
+    if not emit(pipelines, as_json=as_json, jq=jq):
+        render_pipeline_list(pipelines)
 
 
 @pipeline_app.command()
@@ -80,16 +81,16 @@ def view(
     config = load_config()
     ref = resolve_repo(repo)
 
-    async def _run() -> None:
+    async def _run() -> tuple[dict[str, Any], list[dict[str, Any]]]:
         async with _bb(config) as client:
             uuid = await _resolve_uuid(client, ref, pipeline)
             obj = await client.get_pipeline(ref.workspace, ref.repo_slug, uuid)
             steps = await client.list_pipeline_steps(ref.workspace, ref.repo_slug, uuid)
-            if emit({"pipeline": obj, "steps": steps}, as_json=as_json, jq=jq):
-                return
-            render_pipeline(obj, steps)
+            return obj, steps
 
-    run(_run())
+    obj, steps = run_with_status("Loading pipeline…", _run())
+    if not emit({"pipeline": obj, "steps": steps}, as_json=as_json, jq=jq):
+        render_pipeline(obj, steps)
 
 
 @pipeline_app.command()
@@ -104,19 +105,22 @@ def logs(
     config = load_config()
     ref = resolve_repo(repo)
 
-    async def _run() -> None:
+    async def _run() -> list[tuple[str, str]]:
         async with _bb(config) as client:
             uuid = await _resolve_uuid(client, ref, pipeline)
             steps = await client.list_pipeline_steps(ref.workspace, ref.repo_slug, uuid)
             chosen = steps if step is None else steps[step - 1 : step]
+            out: list[tuple[str, str]] = []
             for s in chosen:
-                console.rule(s.get("name", "(step)"))
                 log_text = await client.pipeline_step_log(
                     ref.workspace, ref.repo_slug, uuid, str(s.get("uuid"))
                 )
-                console.print(log_text)
+                out.append((s.get("name", "(step)"), log_text))
+            return out
 
-    run(_run())
+    sections = run_with_status("Loading logs…", _run())
+    rendered = "\n".join(f"===== {name} =====\n{text}" for name, text in sections)
+    page(rendered)
 
 
 @pipeline_app.command(name="run")
@@ -146,29 +150,31 @@ def run_pipeline(
     if custom:
         target["selector"] = {"type": "custom", "pattern": custom}
 
-    async def _run() -> None:
+    async def _run() -> dict[str, Any]:
         async with _bb(config) as client:
-            result = await client.run_pipeline(ref.workspace, ref.repo_slug, {"target": target})
-            if emit(result, as_json=as_json, jq=jq):
-                return
-            success(f"Triggered pipeline #{result.get('build_number')} on {ref_name}")
+            return await client.run_pipeline(ref.workspace, ref.repo_slug, {"target": target})
 
-    run(_run())
+    result = run_with_status("Triggering pipeline…", _run())
+    if not emit(result, as_json=as_json, jq=jq):
+        success(f"Triggered pipeline #{result.get('build_number')} on {ref_name}")
 
 
 @pipeline_app.command()
 def stop(
     pipeline: Annotated[str, typer.Argument(help="Build number or pipeline UUID.")],
+    yes: YesOpt = False,
     repo: RepoOpt = None,
 ) -> None:
     """Stop a running pipeline."""
     config = load_config()
     ref = resolve_repo(repo)
+    if not confirm(f"Stop pipeline {pipeline}?", yes=yes):
+        raise typer.Abort
 
     async def _run() -> None:
         async with _bb(config) as client:
             uuid = await _resolve_uuid(client, ref, pipeline)
             await client.stop_pipeline(ref.workspace, ref.repo_slug, uuid)
-            success(f"Stopped pipeline {pipeline}")
 
-    run(_run())
+    run_with_status("Stopping…", _run())
+    success(f"Stopped pipeline {pipeline}")
