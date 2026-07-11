@@ -58,7 +58,8 @@ def _guide_bitbucket() -> None:
         f"  scopes: read:repository:bitbucket, read:pullrequest:bitbucket,\n"
         f"          write:pullrequest:bitbucket, read:pipeline:bitbucket, "
         f"write:pipeline:bitbucket\n"
-        f"Bearer mode — paste a repository/workspace access token from repo settings.[/dim]"
+        f"Bearer mode — paste a repository/workspace access token from repo settings.[/dim]",
+        highlight=False,
     )
 
 
@@ -67,7 +68,8 @@ def _guide_jira() -> None:
     console.print(
         f"[dim]Create a scoped API token (app: Jira):\n"
         f"  {ATLASSIAN_ID_URL}\n"
-        f"  scopes: read:jira-work, write:jira-work, read:jira-user[/dim]"
+        f"  scopes: read:jira-work, write:jira-work, read:jira-user[/dim]",
+        highlight=False,
     )
 
 
