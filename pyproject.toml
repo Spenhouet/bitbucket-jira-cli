@@ -15,6 +15,7 @@ authors = [
 requires-python = ">= 3.10"
 dependencies = [
     'httpx',
+    'keyring',
     'pydantic-settings',
     'pyyaml',
     'questionary',
@@ -38,8 +39,8 @@ Source = "https://github.com/Spenhouet/bitbucket-jira-cli"
 Tracker = "https://github.com/Spenhouet/bitbucket-jira-cli/issues"
 
 [project.scripts]
-bitbucket-jira-cli = "bitbucket_jira_cli.main:app"
-bj = "bitbucket_jira_cli.main:app"
+bitbucket-jira-cli = "bitbucket_jira_cli.main:cli"
+bj = "bitbucket_jira_cli.main:cli"
 
 [tool.hatch.build.targets.wheel]
 packages = ["bitbucket_jira_cli"]
@@ -139,6 +140,9 @@ ignore = [
   "PERF203", # ignore this as this often is intentional.
   "ARG002", # Many methods in this project share the same signature, independent of variable usage.
   "PLC0415", # Allow lacy loading of imports
+  "ANN401", # Allow typing.Any for JSON REST payloads (Bitbucket/Jira responses are dynamic).
+  "FBT001", # Typer models CLI flags as boolean parameters; FBT fights the framework.
+  "FBT002", # Typer options with boolean defaults are idiomatic, not a boolean trap.
 ]
 
 fixable = ["ALL"] # Allow fix for all enabled rules (when using "Fix all" or when `--fix` is provided to ruff check in CLI)
