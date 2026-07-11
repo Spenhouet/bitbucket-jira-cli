@@ -41,7 +41,7 @@ def _resolve_key(key: str | None, config: Config) -> str:
 
 @issue_app.command(name="list")
 def list_issues(
-    jql: Annotated[str | None, typer.Option("--jql", "-q", help="Raw JQL query.")] = None,
+    jql: Annotated[str | None, typer.Option("--jql", help="Raw JQL query.")] = None,
     status: Annotated[str | None, typer.Option("--status", "-s", help="Filter by status.")] = None,
     assignee: Annotated[
         str | None, typer.Option("--assignee", "-a", help="Filter by assignee (accountId or 'me').")
