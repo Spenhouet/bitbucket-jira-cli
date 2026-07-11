@@ -240,15 +240,27 @@ def login(
 ) -> None:
     """Log in to Bitbucket and/or Jira with API tokens (Basic auth).
 
-    With no flag, choose interactively which backend(s) to configure; pass
-    --bitbucket or --jira to log in to just one.
+    With no flag, `bj` logs in whichever backend is not configured yet (both, if
+    neither is); when both are already logged in it asks which to
+    re-authenticate. Pass --bitbucket or --jira to target one explicitly.
     """
     config = load_config()
     do_bb, do_jira = _which(bitbucket, jira)
     if not bitbucket and not jira and not with_token and is_interactive():
-        choice = _pick_backends()
-        do_bb = choice in ("both", "bitbucket")
-        do_jira = choice in ("both", "jira")
+        bb_in = token_source("bitbucket") is not None
+        jira_in = token_source("jira") is not None
+        if bb_in and jira_in:
+            # Both already configured — nothing obvious to do, so ask.
+            choice = _pick_backends()
+            do_bb = choice in ("both", "bitbucket")
+            do_jira = choice in ("both", "jira")
+        else:
+            # Log in exactly the backend(s) not yet configured.
+            do_bb, do_jira = not bb_in, not jira_in
+            if bb_in:
+                console.print("[dim]Bitbucket already logged in — configuring Jira.[/dim]")
+            elif jira_in:
+                console.print("[dim]Jira already logged in — configuring Bitbucket.[/dim]")
     token_stdin: str | None = None
     if with_token:
         if do_bb and do_jira:
