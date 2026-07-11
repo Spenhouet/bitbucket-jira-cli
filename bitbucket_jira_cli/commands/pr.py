@@ -274,6 +274,55 @@ def create(  # noqa: PLR0913 — mirrors `gh pr create`, which has many flags.
     render_pr(pr)
 
 
+@pr_app.command()
+def edit(
+    pr_id: Annotated[int | None, typer.Argument(help="PR id (default: current branch).")] = None,
+    title: Annotated[str | None, typer.Option("--title", "-t", help="New title.")] = None,
+    body: Annotated[str | None, typer.Option("--body", "-b", help="New description.")] = None,
+    base: Annotated[str | None, typer.Option("--base", "-B", help="New target branch.")] = None,
+    reviewer: Annotated[
+        list[str] | None,
+        typer.Option("--reviewer", "-r", help="Set reviewers (repeatable; replaces the set)."),
+    ] = None,
+    editor: Annotated[
+        bool, typer.Option("--editor", "-e", help="Edit the body in $EDITOR.")
+    ] = False,
+    repo: RepoOpt = None,
+    as_json: JsonOpt = False,
+    jq: JqOpt = None,
+) -> None:
+    """Edit an open pull request's title, description, target branch or reviewers."""
+    config = load_config()
+    ref = resolve_repo(repo)
+    if not (title or body or base or editor or reviewer is not None):
+        msg = "Nothing to edit: pass --title, --body/--editor, --base and/or --reviewer."
+        raise BjError(msg)
+
+    async def _run() -> dict[str, Any]:
+        async with _bb(config) as client:
+            resolved = await _resolve_id(client, ref, pr_id)
+            pr = await client.get_pr(ref.workspace, ref.repo_slug, resolved)
+            current_body = pr.get("summary", {}).get("raw") or pr.get("description") or ""
+            new_body = body
+            if new_body is None and editor:
+                new_body = edit_text(current_body)
+            payload: dict[str, Any] = {
+                "title": title or pr.get("title", ""),
+                "description": new_body if new_body is not None else current_body,
+            }
+            dest = base or pr.get("destination", {}).get("branch", {}).get("name")
+            if dest:
+                payload["destination"] = {"branch": {"name": dest}}
+            if reviewer is not None:
+                payload["reviewers"] = [_reviewer_ref(r) for r in reviewer]
+            return await client.update_pr(ref.workspace, ref.repo_slug, resolved, payload)
+
+    updated = run_with_status("Updating pull request…", _run())
+    if not emit(updated, as_json=as_json, jq=jq):
+        success(f"Updated PR #{updated.get('id')}")
+        render_pr(updated)
+
+
 # -- list / view / diff / status --------------------------------------------
 @pr_app.command(name="list")
 def list_prs(
