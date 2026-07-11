@@ -139,6 +139,36 @@ def render_issue_list(issues: list[dict[str, Any]]) -> None:
     console.print(table)
 
 
+def field_value_str(value: Any) -> str:
+    """Best-effort human string for a Jira field value of any type."""
+    if value is None:
+        return ""
+    if isinstance(value, dict):
+        for key in ("displayName", "value", "name", "id"):
+            if value.get(key):
+                return str(value[key])
+        return ""
+    if isinstance(value, list):
+        return ", ".join(field_value_str(item) for item in value)
+    return str(value)
+
+
+def render_issue_fields(rows: list[dict[str, Any]]) -> None:
+    """Render editable fields: name, id, type, current value, allowed values."""
+    if not rows:
+        console.print("[dim]No editable fields.[/dim]")
+        return
+    table = Table(box=None, pad_edge=False)
+    table.add_column("Field", style="cyan")
+    table.add_column("Id", style="dim")
+    table.add_column("Type", style="dim")
+    table.add_column("Value")
+    table.add_column("Allowed", style="dim")
+    for row in rows:
+        table.add_row(row["name"], row["id"], row["type"], row["value"], row["allowed"])
+    console.print(table)
+
+
 def render_issue(issue: dict[str, Any], comments: list[dict[str, Any]] | None = None) -> None:
     fields = issue.get("fields", {})
     console.print(f"[bold]{issue.get('key')} {fields.get('summary', '')}[/bold]")

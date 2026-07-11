@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from typing import Annotated
 from typing import Any
 
@@ -22,11 +23,20 @@ from bitbucket_jira_cli.interaction import is_interactive
 from bitbucket_jira_cli.interaction import require_input
 from bitbucket_jira_cli.interaction import run_with_status
 from bitbucket_jira_cli.interaction import select
+from bitbucket_jira_cli.jira_fields import build_index
+from bitbucket_jira_cli.jira_fields import coerce_value
+from bitbucket_jira_cli.jira_fields import is_user_type
+from bitbucket_jira_cli.jira_fields import resolve_field
 from bitbucket_jira_cli.jira_ops import transition_to
+from bitbucket_jira_cli.render import field_value_str
 from bitbucket_jira_cli.render import render_issue
+from bitbucket_jira_cli.render import render_issue_fields
 from bitbucket_jira_cli.render import render_issue_list
 from bitbucket_jira_cli.ui import console
 from bitbucket_jira_cli.ui import success
+
+if TYPE_CHECKING:
+    from bitbucket_jira_cli.api.jira import JiraClient
 
 issue_app = typer.Typer(help="Manage Jira issues.", no_args_is_help=True)
 
@@ -34,6 +44,7 @@ JsonOpt = Annotated[bool, typer.Option("--json", help="Output raw JSON.")]
 JqOpt = Annotated[str | None, typer.Option("--jq", "-q", help="Filter JSON with a jq expression.")]
 EditorOpt = Annotated[bool, typer.Option("--editor", "-e", help="Write the body in $EDITOR.")]
 YesOpt = Annotated[bool, typer.Option("--yes", "-y", help="Skip the confirmation prompt.")]
+_ALLOWED_TRUNC = 40
 
 
 def _resolve_key(key: str | None, config: Config) -> str:
@@ -53,6 +64,69 @@ def _body_from(body: str | None, *, editor: bool) -> str | None:
     if editor:
         return edit_text("") or None
     return None
+
+
+async def _resolve_account_id(client: JiraClient, query: str, issue_key: str) -> str:
+    if query.lower() == "me":
+        return str((await client.myself())["accountId"])
+    users = await client.search_assignable_users(query, issue_key=issue_key)
+    if not users:
+        msg = f"No assignable user matches '{query}'."
+        raise BranchKeyError(msg)
+    return str(users[0]["accountId"])
+
+
+def _label_verbs(labels: list[str]) -> list[dict[str, str]]:
+    verbs: list[dict[str, str]] = []
+    for raw in labels:
+        if raw.startswith("-"):
+            verbs.append({"remove": raw[1:]})
+        else:
+            verbs.append({"add": raw.removeprefix("+")})
+    return verbs
+
+
+@issue_app.command()
+def fields(
+    key: Annotated[str | None, typer.Argument(help="Issue key (default: from branch).")] = None,
+    as_json: JsonOpt = False,
+    jq: JqOpt = None,
+) -> None:
+    """List the editable fields on an issue (name, id, type, value, allowed values)."""
+    config = load_config()
+    resolved = _resolve_key(key, config)
+
+    async def _run() -> tuple[dict[str, Any], dict[str, Any]]:
+        async with jira_client(config) as client:
+            editmeta = await client.get_editmeta(resolved)
+            issue = await client.get_issue(resolved, fields=["*all"], expand=["schema"])
+            return editmeta, issue.get("fields", {})
+
+    editmeta, values = run_with_status("Loading fields…", _run())
+    if emit(editmeta, as_json=as_json, jq=jq):
+        return
+    rows = []
+    for field_id, meta in sorted(editmeta.items(), key=lambda kv: kv[1].get("name", "")):
+        schema = meta.get("schema", {})
+        type_str = schema.get("type", "")
+        if schema.get("items"):
+            type_str += f"[{schema['items']}]"
+        allowed = ", ".join(
+            str(a.get("value") or a.get("name") or a.get("id"))
+            for a in meta.get("allowedValues", [])
+        )
+        rows.append(
+            {
+                "name": meta.get("name", field_id),
+                "id": field_id,
+                "type": type_str,
+                "value": field_value_str(values.get(field_id)),
+                "allowed": (allowed[:_ALLOWED_TRUNC] + "…")
+                if len(allowed) > _ALLOWED_TRUNC
+                else allowed,
+            }
+        )
+    render_issue_fields(rows)
 
 
 @issue_app.command(name="list")
@@ -135,6 +209,11 @@ def create(
     summary: Annotated[str | None, typer.Option("--summary", "-s", help="Summary/title.")] = None,
     body: Annotated[str | None, typer.Option("--body", "-b", help="Description.")] = None,
     editor: EditorOpt = False,
+    assignee: Annotated[
+        str | None, typer.Option("--assignee", "-a", help="Assignee (name/email, or 'me').")
+    ] = None,
+    label: Annotated[list[str] | None, typer.Option("--label", "-l", help="Label.")] = None,
+    priority: Annotated[str | None, typer.Option("--priority", help="Priority name.")] = None,
     as_json: JsonOpt = False,
     jq: JqOpt = None,
 ) -> None:
@@ -150,9 +229,18 @@ def create(
     description = _body_from(body, editor=editor)
     if description:
         fields["description"] = text_to_adf(description)
+    if priority:
+        fields["priority"] = {"name": priority}
+    if label:
+        fields["labels"] = [ll.removeprefix("+") for ll in label]
 
     async def _run() -> dict[str, Any]:
         async with jira_client(config) as client:
+            if assignee:
+                # Resolve against the project's assignable users (no issue yet).
+                users = await client.search_assignable_users(assignee, issue_key=f"{proj}-1")
+                if users:
+                    fields["assignee"] = {"accountId": users[0]["accountId"]}
             return await client.create_issue({"fields": fields})
 
     created = run_with_status("Creating issue…", _run())
@@ -160,29 +248,75 @@ def create(
         success(f"Created {created.get('key')}")
 
 
+async def _apply_field_specs(
+    client: JiraClient, resolved: str, specs: list[str], fields: dict[str, Any]
+) -> None:
+    editmeta = await client.get_editmeta(resolved)
+    index = build_index(editmeta)
+    for spec in specs:
+        name, sep, value = spec.partition("=")
+        if not sep:
+            msg = f"--field must be NAME=VALUE, got '{spec}'."
+            raise BranchKeyError(msg)
+        field_id, meta = resolve_field(name.strip(), index)
+        if is_user_type(meta.get("schema", {})):
+            fields[field_id] = {
+                "accountId": await _resolve_account_id(client, value.strip(), resolved)
+            }
+        else:
+            fields[field_id] = coerce_value(value.strip(), meta)
+
+
 @issue_app.command()
-def edit(
+def edit(  # noqa: C901 — orchestrates many optional field updates.
     key: Annotated[str | None, typer.Argument(help="Issue key (default: from branch).")] = None,
     summary: Annotated[str | None, typer.Option("--summary", "-s", help="New summary.")] = None,
     body: Annotated[str | None, typer.Option("--body", "-b", help="New description.")] = None,
     editor: EditorOpt = False,
+    assignee: Annotated[
+        str | None, typer.Option("--assignee", "-a", help="Assignee (name/email, or 'me').")
+    ] = None,
+    label: Annotated[
+        list[str] | None, typer.Option("--label", "-l", help="Label; prefix '-' to remove.")
+    ] = None,
+    priority: Annotated[str | None, typer.Option("--priority", help="Priority name.")] = None,
+    field: Annotated[
+        list[str] | None,
+        typer.Option("--field", help="Set any field: 'Name=Value' (repeatable)."),
+    ] = None,
 ) -> None:
-    """Edit a Jira issue's fields."""
+    """Edit a Jira issue: summary, description, assignee, labels, priority, or any --field."""
     config = load_config()
     resolved = _resolve_key(key, config)
-    fields: dict[str, Any] = {}
-    if summary:
-        fields["summary"] = summary
-    description = _body_from(body, editor=editor)
-    if description:
-        fields["description"] = text_to_adf(description)
-    if not fields:
-        msg = "Nothing to edit: pass --summary and/or --body (or --editor)."
+    if not (summary or body or editor or assignee or label or priority or field):
+        msg = "Nothing to edit. Pass --summary/--body/--assignee/--label/--priority/--field."
         raise BranchKeyError(msg)
+    description = _body_from(body, editor=editor)
 
     async def _run() -> None:
         async with jira_client(config) as client:
-            await client.edit_issue(resolved, {"fields": fields})
+            fields: dict[str, Any] = {}
+            update: dict[str, Any] = {}
+            if summary:
+                fields["summary"] = summary
+            if description is not None:
+                fields["description"] = text_to_adf(description)
+            if priority:
+                fields["priority"] = {"name": priority}
+            if assignee:
+                fields["assignee"] = {
+                    "accountId": await _resolve_account_id(client, assignee, resolved)
+                }
+            if label:
+                update["labels"] = _label_verbs(label)
+            if field:
+                await _apply_field_specs(client, resolved, field, fields)
+            payload: dict[str, Any] = {}
+            if fields:
+                payload["fields"] = fields
+            if update:
+                payload["update"] = update
+            await client.edit_issue(resolved, payload)
 
     run_with_status("Updating…", _run())
     success(f"Updated {resolved}")

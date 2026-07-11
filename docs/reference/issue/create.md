@@ -22,6 +22,9 @@ bj issue create [OPTIONS]
 | `-s, --summary <text>` | Summary/title. |
 | `-b, --body <text>` | Description. |
 | `-e, --editor` | Write the body in $EDITOR. |
+| `-a, --assignee <text>` | Assignee (name/email, or 'me'). |
+| `-l, --label <text>` | Label. |
+| `--priority <text>` | Priority name. |
 | `--json` | Output raw JSON. |
 | `-q, --jq <text>` | Filter JSON with a jq expression. |
 
