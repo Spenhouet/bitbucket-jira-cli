@@ -5,27 +5,45 @@ title: Installation
 
 # Installation
 
-## uv / uvx (recommended)
+## Recommended: one-line install (uv)
 
-Install as an isolated tool:
+The install script sets up an isolated, self-updating CLI via
+[uv](https://docs.astral.sh/uv/) — no virtualenv juggling.
+
+**macOS and Linux**
 
 ```bash
+curl -LsSf uvx.sh/bitbucket-jira-cli/install.sh | sh
+```
+
+**Windows**
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://uvx.sh/bitbucket-jira-cli/install.ps1 | iex"
+```
+
+Installing a specific version:
+
+```bash
+curl -LsSf uvx.sh/bitbucket-jira-cli/0.1.0/install.sh | sh
+```
+
+## Alternatives
+
+### PyPI (pip or uv)
+
+```bash
+# Install as an isolated tool…
 uv tool install bitbucket-jira-cli
-```
 
-…or run it once without installing:
-
-```bash
+# …or run it once without installing:
 uvx bitbucket-jira-cli --help
-```
 
-## pip
-
-```bash
+# …or with pip:
 pip install bitbucket-jira-cli
 ```
 
-## Docker
+### Docker
 
 ```bash
 docker pull spenhouet/bitbucket-jira-cli:latest

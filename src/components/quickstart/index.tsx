@@ -14,10 +14,19 @@ import Link from "@docusaurus/Link";
 function makeStepTabs(local: ReactNode, docker: ReactNode) {
   return (
     <Tabs groupId="install-method" queryString>
-      <TabItem value="uv" label="uv">
+      <TabItem value="linux" label="Linux">
+        {local}
+      </TabItem>
+      <TabItem value="macos" label="macOS">
+        {local}
+      </TabItem>
+      <TabItem value="windows" label="Windows">
         {local}
       </TabItem>
       <TabItem value="pip" label="pip">
+        {local}
+      </TabItem>
+      <TabItem value="uv" label="uv">
         {local}
       </TabItem>
       <TabItem value="docker" label="Docker">
