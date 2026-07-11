@@ -18,6 +18,7 @@ bj pr <command> [OPTIONS]
 | Command | Description |
 | --- | --- |
 | [`create`](create.md) | Open a pull request; auto-link and transition the branch's Jira ticket. |
+| [`edit`](edit.md) | Edit an open pull request's title, description, target branch or reviewers. |
 | [`list`](list.md) | List pull requests in a repository. |
 | [`view`](view.md) | View a pull request. |
 | [`diff`](diff.md) | View the changes in a pull request. |
