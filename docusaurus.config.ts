@@ -225,6 +225,9 @@ const config: Config = {
   ],
 
   markdown: {
+    // Treat .md as CommonMark (not MDX) so the generated command reference can
+    // contain API notation like {workspace} and <KEY> literally. .mdx stays MDX.
+    format: "detect",
     mermaid: false,
     hooks: {
       onBrokenMarkdownLinks: "warn",

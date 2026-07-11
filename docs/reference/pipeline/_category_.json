@@ -1,0 +1,8 @@
+{
+  "label": "bj pipeline",
+  "position": 5,
+  "link": {
+    "type": "doc",
+    "id": "reference/pipeline/index"
+  }
+}

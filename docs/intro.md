@@ -11,14 +11,12 @@ pipelines and Jira issues from one noun-first command surface.
 
 The signature feature is **branch-name-as-Jira-key**: your current git branch
 carries a Jira key (e.g. `feature/PROJ-42-thing`), and commands use it to
-auto-link pull requests to tickets and drive Jira transitions.
-
-:::note Bootstrap scaffold
-This documentation is the project scaffold. Command reference pages are added
-as features land — see the [command mapping plan](https://github.com/Spenhouet/bitbucket-jira-cli/blob/main/docs/plan/command-mapping.md).
-:::
+auto-link pull requests to tickets and drive Jira transitions. See the
+[branch-key workflow](./guides/branch-key.md) guide.
 
 ## Next steps
 
-- [Installation](/installation)
-- [Usage](/usage)
+- [Installation](./installation.md) — install with uv, pip, or Docker.
+- [Usage](./usage.md) — the three-step flow.
+- [Guides](./guides/branch-key.md) — branch keys, configuration, output formatting.
+- [Command reference](./reference/index.md) — every command, generated from the CLI.
