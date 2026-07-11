@@ -73,7 +73,7 @@ const config: Config = {
           // Internal design docs use API notation ({workspace}, <KEY>) that
           // Docusaurus would try to parse as MDX/JSX. They live in the repo for
           // reference but are not part of the published site.
-          exclude: ["research/**", "plan/**"],
+          exclude: ["research/**"],
           editUrl: "https://github.com/Spenhouet/bitbucket-jira-cli/edit/main/",
           showLastUpdateAuthor: true,
           showLastUpdateTime: true,

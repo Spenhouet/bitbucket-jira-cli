@@ -28,10 +28,6 @@ The signature feature is **branch-name-as-Jira-key**: your current git branch
 carries a Jira key (e.g. `feature/PROJ-42-thing`), and commands use it to
 auto-link pull requests to tickets and drive Jira transitions.
 
-> **Status:** bootstrap scaffold. The command tree is declared so `bj --help`
-> renders the intended surface; backends are wired per
-> [`docs/plan/command-mapping.md`](docs/plan/command-mapping.md).
-
 ## Quickstart
 
 ### 1. Install
