@@ -267,17 +267,27 @@ def login(
             msg = "--with-token requires exactly one of --bitbucket or --jira."
             raise AuthError(msg)
         token_stdin = sys.stdin.read().strip()
+    # Save config after each backend: tokens are persisted to the keyring inside
+    # each _login_*, so saving per backend keeps config (email/mode/cloudId) in
+    # step with the stored token even if a later step aborts.
     if do_bb:
         _login_bitbucket(config, insecure=insecure_storage, token_stdin=token_stdin)
+        save_config(config)
     if do_jira:
         _login_jira(config, insecure=insecure_storage, token_stdin=token_stdin)
-    save_config(config)
+        save_config(config)
 
 
 def _status_bitbucket(config: Config) -> bool:
     src = token_source("bitbucket")
     if not src:
         console.print("[yellow]-[/yellow] Bitbucket: not logged in")
+        return False
+    if config.bitbucket.auth_mode == "basic" and not config.bitbucket.email:
+        console.print(
+            "[yellow]-[/yellow] Bitbucket: incomplete — email missing. "
+            "Run `bj auth login --bitbucket`."
+        )
         return False
     token = get_token("bitbucket") or ""
     authorization = (
@@ -290,7 +300,9 @@ def _status_bitbucket(config: Config) -> bool:
     except ApiError as exc:
         console.print(f"[red]✗[/red] Bitbucket: token from {src} rejected — {exc.message}")
         return False
-    console.print(f"[green]✓[/green] Bitbucket: logged in as [bold]{name}[/bold] ({src})")
+    console.print(
+        f"[green]✓[/green] Bitbucket: logged in as [bold]{name}[/bold] ({src})", highlight=False
+    )
     return True
 
 
@@ -309,7 +321,8 @@ def _status_jira(config: Config) -> bool:
     mode = "gateway" if config.jira.auth_mode == "gateway" else "site"
     console.print(
         f"[green]✓[/green] Jira: logged in as [bold]{name}[/bold] "
-        f"at {config.jira.site} ({mode}, {src})"
+        f"at {config.jira.site} ({mode}, {src})",
+        highlight=False,
     )
     return True
 
