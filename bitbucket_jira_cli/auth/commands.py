@@ -60,8 +60,6 @@ def _guide_bitbucket() -> None:
         f"  scopes: read:user:bitbucket, read:workspace:bitbucket, read:repository:bitbucket,\n"
         f"          read:pullrequest:bitbucket, write:pullrequest:bitbucket,\n"
         f"          read:pipeline:bitbucket, write:pipeline:bitbucket\n"
-        f"  (tick BOTH read and write for Pull Requests and Pipelines — "
-        f"write does not imply read)\n"
         f"Bearer mode — paste a repository/workspace access token from repo settings.[/dim]",
         highlight=False,
     )
