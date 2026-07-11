@@ -132,14 +132,107 @@ class BitbucketClient(BaseAsyncClient):
         )
 
     async def add_pr_comment(
-        self, workspace: str, repo_slug: str, pr_id: int, text: str
+        self,
+        workspace: str,
+        repo_slug: str,
+        pr_id: int,
+        text: str,
+        *,
+        inline: dict[str, Any] | None = None,
+        parent_id: int | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"content": {"raw": text}}
+        if inline:
+            body["inline"] = inline
+        if parent_id is not None:
+            body["parent"] = {"id": parent_id}
+        response = await self.request(
+            "POST", f"{self._pr_base(workspace, repo_slug)}/{pr_id}/comments", json=body
+        )
+        return response.json()
+
+    def _comment_base(self, workspace: str, repo_slug: str, pr_id: int) -> str:
+        return f"{self._pr_base(workspace, repo_slug)}/{pr_id}/comments"
+
+    async def update_pr_comment(
+        self, workspace: str, repo_slug: str, pr_id: int, comment_id: int, text: str
     ) -> dict[str, Any]:
         response = await self.request(
-            "POST",
-            f"{self._pr_base(workspace, repo_slug)}/{pr_id}/comments",
+            "PUT",
+            f"{self._comment_base(workspace, repo_slug, pr_id)}/{comment_id}",
             json={"content": {"raw": text}},
         )
         return response.json()
+
+    async def delete_pr_comment(
+        self, workspace: str, repo_slug: str, pr_id: int, comment_id: int
+    ) -> None:
+        await self.request(
+            "DELETE", f"{self._comment_base(workspace, repo_slug, pr_id)}/{comment_id}"
+        )
+
+    async def set_pr_comment_resolved(
+        self, workspace: str, repo_slug: str, pr_id: int, comment_id: int, *, resolved: bool
+    ) -> None:
+        method = "POST" if resolved else "DELETE"
+        await self.request(
+            method, f"{self._comment_base(workspace, repo_slug, pr_id)}/{comment_id}/resolve"
+        )
+
+    # -- pull request tasks -------------------------------------------------
+    def _task_base(self, workspace: str, repo_slug: str, pr_id: int) -> str:
+        return f"{self._pr_base(workspace, repo_slug)}/{pr_id}/tasks"
+
+    async def list_pr_tasks(
+        self, workspace: str, repo_slug: str, pr_id: int, *, limit: int = 100
+    ) -> list[dict[str, Any]]:
+        return await self._paginate(
+            self._task_base(workspace, repo_slug, pr_id), params={"pagelen": 100}, limit=limit
+        )
+
+    async def add_pr_task(
+        self,
+        workspace: str,
+        repo_slug: str,
+        pr_id: int,
+        text: str,
+        *,
+        comment_id: int | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"content": {"raw": text}}
+        if comment_id is not None:
+            body["comment"] = {"id": comment_id}
+        response = await self.request(
+            "POST", self._task_base(workspace, repo_slug, pr_id), json=body
+        )
+        return response.json()
+
+    async def update_pr_task(
+        self,
+        workspace: str,
+        repo_slug: str,
+        pr_id: int,
+        task_id: int,
+        *,
+        state: str | None = None,
+        text: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {}
+        if state is not None:
+            body["state"] = state
+        if text is not None:
+            body["content"] = {"raw": text}
+        response = await self.request(
+            "PUT", f"{self._task_base(workspace, repo_slug, pr_id)}/{task_id}", json=body
+        )
+        return response.json()
+
+    async def delete_pr_task(
+        self, workspace: str, repo_slug: str, pr_id: int, task_id: int
+    ) -> None:
+        await self.request(
+            "DELETE", f"{self._task_base(workspace, repo_slug, pr_id)}/{task_id}"
+        )
 
     # -- pipelines ----------------------------------------------------------
     def _pipe_base(self, workspace: str, repo_slug: str) -> str:

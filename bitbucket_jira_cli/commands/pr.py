@@ -38,6 +38,7 @@ from bitbucket_jira_cli.jira_ops import link_pr
 from bitbucket_jira_cli.jira_ops import transition_to
 from bitbucket_jira_cli.render import render_pr
 from bitbucket_jira_cli.render import render_pr_list
+from bitbucket_jira_cli.render import render_pr_tasks
 from bitbucket_jira_cli.ui import console
 from bitbucket_jira_cli.ui import err_console
 from bitbucket_jira_cli.ui import success
@@ -46,8 +47,11 @@ if TYPE_CHECKING:
     from bitbucket_jira_cli.api.jira import JiraClient
 
 pr_app = typer.Typer(help="Manage Bitbucket pull requests.", no_args_is_help=True)
+task_app = typer.Typer(help="Manage pull-request tasks (checklist items).", no_args_is_help=True)
+pr_app.add_typer(task_app, name="task")
 
 RepoOpt = Annotated[str | None, typer.Option("--repo", "-R", help="Target repo as WORKSPACE/REPO.")]
+PrOpt = Annotated[int | None, typer.Option("--pr", help="PR id (default: current branch).")]
 JsonOpt = Annotated[bool, typer.Option("--json", help="Output raw JSON.")]
 JqOpt = Annotated[str | None, typer.Option("--jq", "-q", help="Filter JSON with a jq expression.")]
 WebOpt = Annotated[bool, typer.Option("--web", "-w", help="Open in the browser.")]
@@ -604,28 +608,66 @@ def review(
     success(f"{verb} PR #{resolved}")
 
 
+def _one_action(*flags: object) -> bool:
+    return sum(1 for f in flags if f) <= 1
+
+
 @pr_app.command()
-def comment(
+def comment(  # noqa: PLR0913 — many gh + Bitbucket comment modes on one verb.
     pr_id: Annotated[int | None, typer.Argument(help="PR id (default: current branch).")] = None,
     body: Annotated[str | None, typer.Option("--body", "-b", help="Comment text.")] = None,
-    editor: Annotated[
-        bool, typer.Option("--editor", "-e", help="Write the comment in $EDITOR.")
-    ] = False,
+    editor: Annotated[bool, typer.Option("--editor", "-e", help="Write in $EDITOR.")] = False,
+    file: Annotated[str | None, typer.Option("--file", help="Inline comment: file path.")] = None,
+    line: Annotated[int | None, typer.Option("--line", help="Inline comment: line number.")] = None,
+    side: Annotated[str, typer.Option("--side", help="Inline side: new|old.")] = "new",
+    reply_to: Annotated[
+        int | None, typer.Option("--reply-to", help="Reply to a comment id.")
+    ] = None,
+    edit_id: Annotated[int | None, typer.Option("--edit", help="Edit a comment id.")] = None,
+    delete_id: Annotated[int | None, typer.Option("--delete", help="Delete a comment id.")] = None,
+    resolve_id: Annotated[int | None, typer.Option("--resolve", help="Resolve a thread.")] = None,
+    unresolve_id: Annotated[
+        int | None, typer.Option("--unresolve", help="Unresolve a thread.")
+    ] = None,
     repo: RepoOpt = None,
 ) -> None:
-    """Add a comment to a pull request."""
+    """Comment on a PR: top-level, inline (--file/--line), reply (--reply-to), or manage."""
     config = load_config()
     ref = resolve_repo(repo)
-    text = require_input(body, flag="--body", label="Comment", editor=editor)
+    if not _one_action(delete_id, resolve_id, unresolve_id, edit_id):
+        msg = "Pass at most one of --edit/--delete/--resolve/--unresolve."
+        raise BjError(msg)
+    if (file is None) != (line is None):
+        msg = "Inline comments need both --file and --line."
+        raise BjError(msg)
+    inline = None
+    if file is not None and line is not None:
+        inline = {"path": file, "to" if side == "new" else "from": line}
 
-    async def _run() -> int:
+    async def _run() -> str:
         async with _bb(config) as client:
             resolved = await _resolve_id(client, ref, pr_id)
-            await client.add_pr_comment(ref.workspace, ref.repo_slug, resolved, text)
-            return resolved
+            ws, slug = ref.workspace, ref.repo_slug
+            if delete_id is not None:
+                await client.delete_pr_comment(ws, slug, resolved, delete_id)
+                return f"Deleted comment {delete_id} on PR #{resolved}"
+            if resolve_id is not None:
+                await client.set_pr_comment_resolved(ws, slug, resolved, resolve_id, resolved=True)
+                return f"Resolved thread {resolve_id} on PR #{resolved}"
+            if unresolve_id is not None:
+                await client.set_pr_comment_resolved(
+                    ws, slug, resolved, unresolve_id, resolved=False
+                )
+                return f"Unresolved thread {unresolve_id} on PR #{resolved}"
+            text = require_input(body, flag="--body", label="Comment", editor=editor)
+            if edit_id is not None:
+                await client.update_pr_comment(ws, slug, resolved, edit_id, text)
+                return f"Edited comment {edit_id} on PR #{resolved}"
+            await client.add_pr_comment(ws, slug, resolved, text, inline=inline, parent_id=reply_to)
+            what = "inline comment" if inline else "reply" if reply_to else "comment"
+            return f"Added {what} on PR #{resolved}"
 
-    resolved = run_with_status("Adding comment…", _run())
-    success(f"Commented on PR #{resolved}")
+    success(run_with_status("Working…", _run()))
 
 
 @pr_app.command()
@@ -652,3 +694,124 @@ def close(
 
     run_with_status("Declining…", _close())
     success(f"Declined PR #{resolved}")
+
+
+# -- tasks ------------------------------------------------------------------
+@task_app.command(name="list")
+def task_list(
+    pr: PrOpt = None, repo: RepoOpt = None, as_json: JsonOpt = False, jq: JqOpt = None
+) -> None:
+    """List a pull request's tasks."""
+    config = load_config()
+    ref = resolve_repo(repo)
+
+    async def _run() -> list[dict[str, Any]]:
+        async with _bb(config) as client:
+            resolved = await _resolve_id(client, ref, pr)
+            return await client.list_pr_tasks(ref.workspace, ref.repo_slug, resolved)
+
+    tasks = run_with_status("Loading tasks…", _run())
+    if not emit(tasks, as_json=as_json, jq=jq):
+        render_pr_tasks(tasks)
+
+
+@task_app.command(name="add")
+def task_add(
+    body: Annotated[str | None, typer.Option("--body", "-b", help="Task text.")] = None,
+    comment: Annotated[
+        int | None, typer.Option("--comment", help="Attach to a comment id.")
+    ] = None,
+    editor: Annotated[bool, typer.Option("--editor", "-e", help="Write in $EDITOR.")] = False,
+    pr: PrOpt = None,
+    repo: RepoOpt = None,
+) -> None:
+    """Add a task to a pull request."""
+    config = load_config()
+    ref = resolve_repo(repo)
+    text = require_input(body, flag="--body", label="Task", editor=editor)
+
+    async def _run() -> int:
+        async with _bb(config) as client:
+            resolved = await _resolve_id(client, ref, pr)
+            await client.add_pr_task(
+                ref.workspace, ref.repo_slug, resolved, text, comment_id=comment
+            )
+            return resolved
+
+    success(f"Added task on PR #{run_with_status('Adding task…', _run())}")
+
+
+def _set_task_state(task_id: int, pr: int | None, repo: str | None, *, state: str) -> None:
+    config = load_config()
+    ref = resolve_repo(repo)
+
+    async def _run() -> int:
+        async with _bb(config) as client:
+            resolved = await _resolve_id(client, ref, pr)
+            await client.update_pr_task(
+                ref.workspace, ref.repo_slug, resolved, task_id, state=state
+            )
+            return resolved
+
+    verb = "Resolved" if state == "RESOLVED" else "Reopened"
+    success(f"{verb} task {task_id} on PR #{run_with_status('Updating task…', _run())}")
+
+
+@task_app.command(name="resolve")
+def task_resolve(
+    task_id: Annotated[int, typer.Argument(help="Task id.")], pr: PrOpt = None, repo: RepoOpt = None
+) -> None:
+    """Mark a task resolved."""
+    _set_task_state(task_id, pr, repo, state="RESOLVED")
+
+
+@task_app.command(name="unresolve")
+def task_unresolve(
+    task_id: Annotated[int, typer.Argument(help="Task id.")], pr: PrOpt = None, repo: RepoOpt = None
+) -> None:
+    """Mark a task unresolved."""
+    _set_task_state(task_id, pr, repo, state="UNRESOLVED")
+
+
+@task_app.command(name="edit")
+def task_edit(
+    task_id: Annotated[int, typer.Argument(help="Task id.")],
+    body: Annotated[str | None, typer.Option("--body", "-b", help="New text.")] = None,
+    editor: Annotated[bool, typer.Option("--editor", "-e", help="Write in $EDITOR.")] = False,
+    pr: PrOpt = None,
+    repo: RepoOpt = None,
+) -> None:
+    """Edit a task's text."""
+    config = load_config()
+    ref = resolve_repo(repo)
+    text = require_input(body, flag="--body", label="Task", editor=editor)
+
+    async def _run() -> int:
+        async with _bb(config) as client:
+            resolved = await _resolve_id(client, ref, pr)
+            await client.update_pr_task(ref.workspace, ref.repo_slug, resolved, task_id, text=text)
+            return resolved
+
+    success(f"Edited task {task_id} on PR #{run_with_status('Updating task…', _run())}")
+
+
+@task_app.command(name="delete")
+def task_delete(
+    task_id: Annotated[int, typer.Argument(help="Task id.")],
+    yes: YesOpt = False,
+    pr: PrOpt = None,
+    repo: RepoOpt = None,
+) -> None:
+    """Delete a task."""
+    config = load_config()
+    ref = resolve_repo(repo)
+    if not confirm(f"Delete task {task_id}?", yes=yes):
+        raise typer.Abort
+
+    async def _run() -> int:
+        async with _bb(config) as client:
+            resolved = await _resolve_id(client, ref, pr)
+            await client.delete_pr_task(ref.workspace, ref.repo_slug, resolved, task_id)
+            return resolved
+
+    success(f"Deleted task {task_id} on PR #{run_with_status('Deleting task…', _run())}")

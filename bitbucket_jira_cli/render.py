@@ -74,10 +74,46 @@ def render_pr(pr: dict[str, Any], comments: list[dict[str, Any]] | None = None) 
         console.print(summary)
     if comments:
         console.print("\n[bold]Comments[/bold]")
-        for c in comments:
-            who = c.get("user", {}).get("display_name", "?")
-            body = c.get("content", {}).get("raw", "")
-            console.print(f"[cyan]{who}[/cyan]: {body}")
+        _render_comment_threads(comments)
+
+
+def _render_comment_threads(comments: list[dict[str, Any]]) -> None:
+    """Print PR comments as threads: reconstruct reply chains from parent ids."""
+    children: dict[Any, list[dict[str, Any]]] = {}
+    for comment in comments:
+        parent = (comment.get("parent") or {}).get("id")
+        children.setdefault(parent, []).append(comment)
+
+    def render_one(comment: dict[str, Any], depth: int) -> None:
+        who = comment.get("user", {}).get("display_name", "?")
+        cid = comment.get("id")
+        inline = comment.get("inline")
+        loc = ""
+        if inline:
+            line = inline.get("to") or inline.get("from")
+            loc = f" [dim]({inline.get('path')}:{line})[/dim]"
+        # The list endpoint returns resolution={} (empty, falsy) when resolved and
+        # null when not — so test for presence, not truthiness.
+        resolved = " [green](resolved)[/green]" if comment.get("resolution") is not None else ""
+        body = comment.get("content", {}).get("raw", "")
+        indent = "  " * depth
+        console.print(f"{indent}[cyan]{who}[/cyan] [dim]#{cid}[/dim]{loc}{resolved}: {body}")
+        for child in children.get(cid, []):
+            render_one(child, depth + 1)
+
+    for root in children.get(None, []):
+        render_one(root, 0)
+
+
+def render_pr_tasks(tasks: list[dict[str, Any]]) -> None:
+    if not tasks:
+        console.print("[dim]No tasks.[/dim]")
+        return
+    for task in tasks:
+        state = str(task.get("state", "")).upper()
+        mark = "[green]✓[/green]" if state == "RESOLVED" else "[ ]"
+        text = task.get("content", {}).get("raw", "")
+        console.print(f"{mark} [cyan]{task.get('id')}[/cyan] {text}")
 
 
 # -- Jira issues ------------------------------------------------------------
