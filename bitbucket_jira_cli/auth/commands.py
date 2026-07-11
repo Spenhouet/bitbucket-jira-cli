@@ -57,9 +57,11 @@ def _guide_bitbucket() -> None:
     console.print(
         f"[dim]Basic mode — create a scoped API token (app: Bitbucket):\n"
         f"  {ATLASSIAN_ID_URL}\n"
-        f"  scopes: read:repository:bitbucket, read:pullrequest:bitbucket,\n"
-        f"          write:pullrequest:bitbucket, read:pipeline:bitbucket, "
-        f"write:pipeline:bitbucket\n"
+        f"  scopes: read:user:bitbucket, read:workspace:bitbucket, read:repository:bitbucket,\n"
+        f"          read:pullrequest:bitbucket, write:pullrequest:bitbucket,\n"
+        f"          read:pipeline:bitbucket, write:pipeline:bitbucket\n"
+        f"  (tick BOTH read and write for Pull Requests and Pipelines — "
+        f"write does not imply read)\n"
         f"Bearer mode — paste a repository/workspace access token from repo settings.[/dim]",
         highlight=False,
     )

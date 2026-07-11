@@ -56,3 +56,23 @@ token in this order:
 Bitbucket and Jira use **separate** tokens; a token for one will not authenticate
 the other. See [Environment](./environment.md) for the full variable list and
 [`bj auth`](../reference/auth/index.md) for the login flow.
+
+## Token scopes
+
+Create scoped API tokens at
+[id.atlassian.com](https://id.atlassian.com/manage-profile/security/api-tokens)
+("Create API token with scopes").
+
+**Bitbucket** (app: Bitbucket) — grant these seven:
+
+- `read:user:bitbucket` — required for the current-user check `bj auth login` runs
+- `read:workspace:bitbucket` — list workspace members (reviewer selection)
+- `read:repository:bitbucket` — view/list repos, read clone URLs, clone
+- `read:pullrequest:bitbucket` and `write:pullrequest:bitbucket`
+- `read:pipeline:bitbucket` and `write:pipeline:bitbucket`
+
+For granular API-token scopes, **write does not imply read** — tick both boxes
+for Pull Requests and Pipelines. `write:repository` is not needed (`bj` only
+reads and clones repositories).
+
+**Jira** (app: Jira): `read:jira-work`, `write:jira-work`, `read:jira-user`.
