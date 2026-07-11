@@ -18,9 +18,12 @@ else `~/.config/bitbucket-jira-cli`. Files are written with `0600` permissions.
 
 ## `config.yml`
 
-Written by [`bj auth login`](../reference/auth/login.md) and
-[`bj repo set-default`](../reference/repo/set-default.md); you can also edit it
-by hand.
+Written by [`bj auth login`](../reference/auth/login.md) (the `bitbucket.email`,
+`jira.site` and `jira.email` fields) and
+[`bj repo set-default`](../reference/repo/set-default.md) (the default
+`bitbucket.workspace`); you can also edit it by hand. Inside a Bitbucket clone
+the workspace is read from the `origin` remote, so setting a default is only
+needed for commands run outside a clone (like `bj repo list`).
 
 ```yaml
 version: 1

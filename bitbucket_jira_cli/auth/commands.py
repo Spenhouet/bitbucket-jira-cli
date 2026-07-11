@@ -108,10 +108,6 @@ def _login_bitbucket(config: Config, *, insecure: bool, token_stdin: str | None)
                 default=config.bitbucket.auth_mode,
             )
         )
-        config.bitbucket.workspace = (
-            _ask(questionary.text("Default workspace", default=config.bitbucket.workspace or ""))
-            or None
-        )
         email = config.bitbucket.email or ""
         if mode == "basic":
             email = _ask(questionary.text("Atlassian account email", default=email))

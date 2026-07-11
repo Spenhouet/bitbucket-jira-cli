@@ -28,7 +28,11 @@ def resolve_repo(repo: str | None) -> RepoRef:
 def resolve_workspace(workspace: str | None, config_workspace: str | None) -> str:
     ws = workspace or config_workspace
     if not ws:
-        msg = "No workspace given. Pass WORKSPACE or set one via `bj auth login`."
+        msg = (
+            "No workspace given. Pass it as an argument (e.g. `bj repo list myteam`), "
+            "set a default with `bj repo set-default myteam/repo`, or run inside a "
+            "Bitbucket clone so it can be read from the remote."
+        )
         raise BjError(msg)
     return ws
 
