@@ -46,9 +46,27 @@ class JiraClient(BaseAsyncClient):
         return await self.get_json("/myself")
 
     # -- issues -------------------------------------------------------------
-    async def get_issue(self, key: str, *, fields: list[str] | None = None) -> dict[str, Any]:
-        params = {"fields": ",".join(fields)} if fields else None
-        return await self.get_json(f"/issue/{key}", params=params)
+    async def get_issue(
+        self, key: str, *, fields: list[str] | None = None, expand: list[str] | None = None
+    ) -> dict[str, Any]:
+        params: dict[str, Any] = {}
+        if fields:
+            params["fields"] = ",".join(fields)
+        if expand:
+            params["expand"] = ",".join(expand)
+        return await self.get_json(f"/issue/{key}", params=params or None)
+
+    async def get_editmeta(self, key: str) -> dict[str, Any]:
+        data = await self.get_json(f"/issue/{key}/editmeta")
+        return data.get("fields", {})
+
+    async def search_assignable_users(
+        self, query: str, *, issue_key: str, limit: int = 10
+    ) -> list[dict[str, Any]]:
+        return await self.get_json(
+            "/user/assignable/search",
+            params={"query": query, "issueKey": issue_key, "maxResults": limit},
+        )
 
     async def create_issue(self, body: dict[str, Any]) -> dict[str, Any]:
         response = await self.request("POST", "/issue", json=body)

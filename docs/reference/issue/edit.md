@@ -5,7 +5,7 @@ sidebar_label: edit
 
 # bj issue edit
 
-Edit a Jira issue's fields.
+Edit a Jira issue: summary, description, assignee, labels, priority, or any --field.
 
 ## Synopsis
 
@@ -26,6 +26,10 @@ bj issue edit [OPTIONS] [KEY]
 | `-s, --summary <text>` | New summary. |
 | `-b, --body <text>` | New description. |
 | `-e, --editor` | Write the body in $EDITOR. |
+| `-a, --assignee <text>` | Assignee (name/email, or 'me'). |
+| `-l, --label <text>` | Label; prefix '-' to remove. |
+| `--priority <text>` | Priority name. |
+| `--field <text>` | Set any field: 'Name=Value' (repeatable). |
 
 ## See also
 
