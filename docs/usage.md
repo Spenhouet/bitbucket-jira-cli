@@ -18,7 +18,7 @@ bj pr create
 bj issue view          # key read from the branch
 bj pr view             # PR for the current branch
 
-# 4. Merge — the linked ticket transitions to Done
+# 4. Merge (the linked ticket transitions to Done)
 bj pr merge --squash --delete-branch
 ```
 

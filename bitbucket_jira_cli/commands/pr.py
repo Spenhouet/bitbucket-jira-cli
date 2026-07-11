@@ -246,7 +246,7 @@ def create(  # noqa: PLR0913 — mirrors `gh pr create`, which has many flags.
         payload["reviewers"] = reviewers
 
     if dry_run:
-        console.print("[bold]Dry run — would create PR:[/bold]")
+        console.print("[bold]Dry run. Would create PR:[/bold]")
         console.print(f"  {source} → {dest}\n  title: {final_title}")
         if key:
             console.print(f"  link + transition {key} → {config.transitions.on_pr_create}")
@@ -551,7 +551,7 @@ def merge(  # noqa: PLR0913 — mirrors `gh pr merge`.
         strategy, delete_branch = _prompt_merge_method(delete_branch)
 
     if dry_run:
-        console.print(f"[bold]Dry run — would merge PR #{resolved} ({strategy})[/bold]")
+        console.print(f"[bold]Dry run. Would merge PR #{resolved} ({strategy})[/bold]")
         if key:
             console.print(f"  transition {key} → {config.transitions.on_pr_merge}")
         return

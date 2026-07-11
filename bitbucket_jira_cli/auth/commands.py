@@ -58,12 +58,12 @@ ATLASSIAN_ID_URL = "https://id.atlassian.com/manage-profile/security/api-tokens"
 def _guide_bitbucket() -> None:
     console.print("[bold]Bitbucket Cloud[/bold]")
     console.print(
-        f"[dim]Basic mode — create a scoped API token (app: Bitbucket):\n"
+        f"[dim]Basic mode: create a scoped API token (app: Bitbucket):\n"
         f"  {ATLASSIAN_ID_URL}\n"
         f"  scopes: read:user:bitbucket, read:workspace:bitbucket, read:repository:bitbucket,\n"
         f"          read:pullrequest:bitbucket, write:pullrequest:bitbucket,\n"
         f"          read:pipeline:bitbucket, write:pipeline:bitbucket\n"
-        f"Bearer mode — paste a repository/workspace access token from repo settings.[/dim]",
+        f"Bearer mode: paste a repository/workspace access token from repo settings.[/dim]",
         highlight=False,
     )
 
@@ -72,7 +72,7 @@ def _guide_jira() -> None:
     console.print("[bold]Jira Cloud[/bold]")
     console.print(
         f"[dim]Create an API token at {ATLASSIAN_ID_URL}\n"
-        f"  • Unscoped (simplest): the plain 'Create API token' button — no scopes.\n"
+        f"  • Unscoped (simplest): the plain 'Create API token' button, no scopes.\n"
         f"  • Scoped (least privilege): 'Create API token with scopes', app: Jira,\n"
         f"    scopes read:jira-work, write:jira-work, read:jira-user. bj addresses it\n"
         f"    through the api.atlassian.com gateway (cloudId resolved automatically).\n"
@@ -90,7 +90,7 @@ def _ask(question: Any) -> str:
 
 
 _BB_MODE_CHOICES = [
-    questionary.Choice("API token (Atlassian account) — recommended", value="basic"),
+    questionary.Choice("API token (Atlassian account), recommended", value="basic"),
     questionary.Choice("Access token (repository / workspace / project)", value="bearer"),
 ]
 
@@ -133,8 +133,8 @@ def _login_bitbucket(config: Config, *, insecure: bool, token_stdin: str | None)
 
 
 _JIRA_MODE_CHOICES = [
-    questionary.Choice("Unscoped API token — simplest (your site host)", value="site"),
-    questionary.Choice("Scoped API token — least privilege (api.atlassian.com)", value="gateway"),
+    questionary.Choice("Unscoped API token: simplest (your site host)", value="site"),
+    questionary.Choice("Scoped API token: least privilege (api.atlassian.com)", value="gateway"),
 ]
 
 
@@ -258,9 +258,9 @@ def login(
             # Log in exactly the backend(s) not yet configured.
             do_bb, do_jira = not bb_in, not jira_in
             if bb_in:
-                console.print("[dim]Bitbucket already logged in — configuring Jira.[/dim]")
+                console.print("[dim]Bitbucket already logged in, configuring Jira.[/dim]")
             elif jira_in:
-                console.print("[dim]Jira already logged in — configuring Bitbucket.[/dim]")
+                console.print("[dim]Jira already logged in, configuring Bitbucket.[/dim]")
     token_stdin: str | None = None
     if with_token:
         if do_bb and do_jira:
@@ -285,7 +285,7 @@ def _status_bitbucket(config: Config) -> bool:
         return False
     if config.bitbucket.auth_mode == "basic" and not config.bitbucket.email:
         console.print(
-            "[yellow]-[/yellow] Bitbucket: incomplete — email missing. "
+            "[yellow]-[/yellow] Bitbucket: incomplete, email missing. "
             "Run `bj auth login --bitbucket`."
         )
         return False
@@ -298,7 +298,7 @@ def _status_bitbucket(config: Config) -> bool:
     try:
         name = run(_validate_bitbucket(authorization))
     except ApiError as exc:
-        console.print(f"[red]✗[/red] Bitbucket: token from {src} rejected — {exc.message}")
+        console.print(f"[red]✗[/red] Bitbucket: token from {src} rejected: {exc.message}")
         return False
     console.print(
         f"[green]✓[/green] Bitbucket: logged in as [bold]{name}[/bold] ({src})", highlight=False
@@ -316,7 +316,7 @@ def _status_jira(config: Config) -> bool:
         name = run(_validate_jira(jira_rest_base(config), authorization))
     except (ApiError, AuthError) as exc:
         detail = exc.message if isinstance(exc, ApiError) else str(exc)
-        console.print(f"[red]✗[/red] Jira: token from {src} rejected — {detail}")
+        console.print(f"[red]✗[/red] Jira: token from {src} rejected: {detail}")
         return False
     mode = "gateway" if config.jira.auth_mode == "gateway" else "site"
     console.print(

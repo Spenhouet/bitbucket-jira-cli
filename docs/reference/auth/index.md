@@ -15,7 +15,7 @@ bj auth <command> [OPTIONS]
 
 ## Description
 
-`bj` stores two independent credentials — one for Bitbucket, one for Jira — because the two products use separate API tokens. Tokens go to the OS keyring by default, or a 0600 file with `--insecure-storage`. See the [environment](../../guides/environment.md) guide for the `BJ_*_TOKEN` overrides.
+`bj` stores two independent credentials, one for Bitbucket and one for Jira, because the two products use separate API tokens. Tokens go to the OS keyring by default, or a 0600 file with `--insecure-storage`. See the [environment](../../guides/environment.md) guide for the `BJ_*_TOKEN` overrides.
 
 ## Commands
 

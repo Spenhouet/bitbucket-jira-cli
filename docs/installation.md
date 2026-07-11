@@ -8,7 +8,7 @@ title: Installation
 ## Recommended: one-line install (uv)
 
 The install script sets up an isolated, self-updating CLI via
-[uv](https://docs.astral.sh/uv/) — no virtualenv juggling.
+[uv](https://docs.astral.sh/uv/). No virtualenv juggling.
 
 **macOS and Linux**
 

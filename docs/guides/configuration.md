@@ -13,8 +13,8 @@ YAML file; secrets (API tokens) go to the OS keyring.
 The config directory is `$BJ_CONFIG_DIR`, else `$XDG_CONFIG_HOME/bitbucket-jira-cli`,
 else `~/.config/bitbucket-jira-cli`. Files are written with `0600` permissions.
 
-- `config.yml` — non-sensitive settings (below).
-- `credentials.yml` — only present if you logged in with `--insecure-storage`.
+- `config.yml`: non-sensitive settings (below).
+- `credentials.yml`: only present if you logged in with `--insecure-storage`.
 
 ## `config.yml`
 
@@ -27,7 +27,7 @@ needed for commands run outside a clone (like `bj repo list`).
 
 ```yaml
 version: 1
-git_protocol: https          # https | ssh — used by `bj repo clone`
+git_protocol: https          # https | ssh, used by `bj repo clone`
 bitbucket:
   workspace: myteam          # default workspace when not in a clone
   email: you@example.com     # Atlassian account email (basic auth)
@@ -51,7 +51,7 @@ transitions:
 `bj` never writes tokens to `config.yml`. At read time it resolves each backend's
 token in this order:
 
-1. Environment variable (`BJ_BITBUCKET_TOKEN` / `BJ_JIRA_TOKEN`) — never persisted.
+1. Environment variable (`BJ_BITBUCKET_TOKEN` / `BJ_JIRA_TOKEN`), never persisted.
 2. The OS keyring (service `bitbucket-jira-cli`).
 3. `credentials.yml` (only if `--insecure-storage` was used).
 
@@ -64,29 +64,29 @@ the other. See [Environment](./environment.md) for the full variable list and
 Both tokens are created at
 [id.atlassian.com](https://id.atlassian.com/manage-profile/security/api-tokens).
 
-### Bitbucket — scoped API token
+### Bitbucket scoped API token
 
 Use **"Create API token with scopes"**, app **Bitbucket**, and grant these seven:
 
-- `read:user:bitbucket` — required for the current-user check `bj auth login` runs
-- `read:workspace:bitbucket` — list workspace members (reviewer selection)
-- `read:repository:bitbucket` — view/list repos, read clone URLs, clone
+- `read:user:bitbucket`: required for the current-user check `bj auth login` runs
+- `read:workspace:bitbucket`: list workspace members (reviewer selection)
+- `read:repository:bitbucket`: view/list repos, read clone URLs, clone
 - `read:pullrequest:bitbucket` and `write:pullrequest:bitbucket`
 - `read:pipeline:bitbucket` and `write:pipeline:bitbucket`
 
-For granular API-token scopes, **write does not imply read** — tick both boxes
+For granular API-token scopes, **write does not imply read**, so tick both boxes
 for Pull Requests and Pipelines. `write:repository` is not needed (`bj` only
 reads and clones repositories).
 
-### Jira — two token modes
+### Jira: two token modes
 
 `bj auth login` asks which you're using:
 
-- **Unscoped (simplest)** — the plain **"Create API token"** button (no scope
+- **Unscoped (simplest)**: the plain **"Create API token"** button (no scope
   selection). `bj` sends it as Basic auth (email + token) against your
   `*.atlassian.net` site host, like the `jira` and `go-jira` CLIs. This becomes
   `jira.auth_mode: site` in `config.yml`.
-- **Scoped (least privilege)** — **"Create API token with scopes"**, app
+- **Scoped (least privilege)**: **"Create API token with scopes"**, app
   **Jira**, scopes `read:jira-work`, `write:jira-work`, `read:jira-user`. Scoped
   Jira tokens are only accepted on Atlassian's `api.atlassian.com/ex/jira/{cloudId}`
   gateway (they 401 against the site host), so `bj` resolves your site's cloudId
@@ -96,5 +96,5 @@ reads and clones repositories).
 Both use the same three scopes' worth of access; the scoped token just limits
 the token itself. `write:jira-work` covers issue create/edit, comments,
 transitions and remote issue links; `read:jira-work` covers search and reads;
-`read:jira-user` covers the current-user check. Write does not imply read —
+`read:jira-user` covers the current-user check. Write does not imply read, so
 grant both.
