@@ -147,6 +147,21 @@ def test_feature_description() -> None:
     assert result == expected_output
 ```
 
+## Documentation
+
+The docs site is built with Docusaurus (`docs/`, `npm run build`). The
+**command reference** under `docs/reference/` is generated from the live CLI —
+do not edit those pages by hand. After changing any command, flag, or help
+string, regenerate and commit them:
+
+```bash
+uv run python scripts/gen_cli_docs.py
+```
+
+Hand-written pages (intro, installation, usage, and the guides under
+`docs/guides/`) are edited normally. Extended command descriptions and examples
+live in the maps at the top of `scripts/gen_cli_docs.py`.
+
 ## Code Quality
 
 ### Linting with Ruff

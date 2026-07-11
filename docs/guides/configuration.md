@@ -1,0 +1,55 @@
+---
+sidebar_position: 2
+title: Configuration
+---
+
+# Configuration
+
+`bj` follows the same split the GitHub CLI uses: non-sensitive settings live in a
+YAML file; secrets (API tokens) go to the OS keyring.
+
+## Location
+
+The config directory is `$BJ_CONFIG_DIR`, else `$XDG_CONFIG_HOME/bitbucket-jira-cli`,
+else `~/.config/bitbucket-jira-cli`. Files are written with `0600` permissions.
+
+- `config.yml` — non-sensitive settings (below).
+- `credentials.yml` — only present if you logged in with `--insecure-storage`.
+
+## `config.yml`
+
+Written by [`bj auth login`](../reference/auth/login.md) and
+[`bj repo set-default`](../reference/repo/set-default.md); you can also edit it
+by hand.
+
+```yaml
+version: 1
+git_protocol: https          # https | ssh — used by `bj repo clone`
+bitbucket:
+  workspace: myteam          # default workspace when not in a clone
+  email: you@example.com     # Atlassian account email (basic auth)
+  auth_mode: basic           # basic (email:token) | bearer (access token)
+jira:
+  site: https://your-domain.atlassian.net
+  email: you@example.com
+branch_key:
+  enabled: true
+  pattern: ([A-Za-z][A-Za-z0-9]+-\d+)
+  project_prefixes: []       # e.g. [PROJ, ABC] to ignore stray matches
+transitions:
+  on_pr_create: In Progress  # ticket state after `bj pr create`
+  on_pr_merge: Done          # ticket state after `bj pr merge`
+```
+
+## Token storage
+
+`bj` never writes tokens to `config.yml`. At read time it resolves each backend's
+token in this order:
+
+1. Environment variable (`BJ_BITBUCKET_TOKEN` / `BJ_JIRA_TOKEN`) — never persisted.
+2. The OS keyring (service `bitbucket-jira-cli`).
+3. `credentials.yml` (only if `--insecure-storage` was used).
+
+Bitbucket and Jira use **separate** tokens; a token for one will not authenticate
+the other. See [Environment](./environment.md) for the full variable list and
+[`bj auth`](../reference/auth/index.md) for the login flow.
