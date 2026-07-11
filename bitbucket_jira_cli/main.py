@@ -1,15 +1,15 @@
-"""CLI entry point.
+"""CLI entry point: assembles the command tree and handles top-level errors."""
 
-This is the bootstrap scaffold: the command tree is declared so `bj --help`
-renders the intended surface, but no backend calls are wired yet. Feature code
-lands per the plan in docs/plan/command-mapping.md.
-"""
+from __future__ import annotations
 
 from typing import Annotated
 
 import typer
 
 from bitbucket_jira_cli import __version__
+from bitbucket_jira_cli.auth.commands import auth_app
+from bitbucket_jira_cli.errors import BjError
+from bitbucket_jira_cli.ui import print_error
 
 app = typer.Typer(
     name="bj",
@@ -18,23 +18,21 @@ app = typer.Typer(
     add_completion=True,
 )
 
-# Command groups mirror gh's noun-first ergonomics. They are registered here as
-# empty sub-apps so the surface is visible in `--help`; commands are added as
-# features are implemented.
-auth_app = typer.Typer(help="Authenticate bj with Bitbucket and Jira.", no_args_is_help=True)
+app.add_typer(auth_app, name="auth")
+
+# Placeholder groups — implemented in follow-up modules. Kept registered so
+# `bj --help` renders the full intended surface.
 repo_app = typer.Typer(help="Work with Bitbucket repositories.", no_args_is_help=True)
 pr_app = typer.Typer(help="Manage Bitbucket pull requests.", no_args_is_help=True)
 issue_app = typer.Typer(help="Manage Jira issues.", no_args_is_help=True)
 pipeline_app = typer.Typer(help="Work with Bitbucket Pipelines.", no_args_is_help=True)
-
-app.add_typer(auth_app, name="auth")
 app.add_typer(repo_app, name="repo")
 app.add_typer(pr_app, name="pr")
 app.add_typer(issue_app, name="issue")
 app.add_typer(pipeline_app, name="pipeline")
 
 
-def _version_callback(value: bool) -> None:  # noqa: FBT001
+def _version_callback(value: bool) -> None:
     if value:
         typer.echo(f"bitbucket-jira-cli {__version__}")
         raise typer.Exit
@@ -42,7 +40,7 @@ def _version_callback(value: bool) -> None:  # noqa: FBT001
 
 @app.callback()
 def main(
-    _version: Annotated[  # noqa: FBT002
+    _version: Annotated[
         bool,
         typer.Option(
             "--version",
@@ -55,5 +53,14 @@ def main(
     """A gh-style CLI for Bitbucket and Jira."""
 
 
+def cli() -> None:
+    """Console-script entry point: run the app, print BjErrors cleanly."""
+    try:
+        app()
+    except BjError as exc:
+        print_error(str(exc))
+        raise SystemExit(1) from exc
+
+
 if __name__ == "__main__":
-    app()
+    cli()
