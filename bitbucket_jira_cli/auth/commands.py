@@ -26,6 +26,7 @@ from bitbucket_jira_cli.config import save_config
 from bitbucket_jira_cli.context import jira_rest_base
 from bitbucket_jira_cli.errors import ApiError
 from bitbucket_jira_cli.errors import AuthError
+from bitbucket_jira_cli.interaction import is_interactive
 from bitbucket_jira_cli.ui import console
 from bitbucket_jira_cli.ui import success
 
@@ -210,9 +211,26 @@ def login(
         ),
     ] = False,
 ) -> None:
-    """Log in to Bitbucket and/or Jira with API tokens (Basic auth)."""
+    """Log in to Bitbucket and/or Jira with API tokens (Basic auth).
+
+    With no flag, choose interactively which backend(s) to configure; pass
+    --bitbucket or --jira to log in to just one.
+    """
     config = load_config()
     do_bb, do_jira = _which(bitbucket, jira)
+    if not bitbucket and not jira and not with_token and is_interactive():
+        choice = _ask(
+            questionary.select(
+                "What would you like to log in to?",
+                choices=[
+                    questionary.Choice("Both Bitbucket and Jira", value="both"),
+                    questionary.Choice("Bitbucket only", value="bitbucket"),
+                    questionary.Choice("Jira only", value="jira"),
+                ],
+            )
+        )
+        do_bb = choice in ("both", "bitbucket")
+        do_jira = choice in ("both", "jira")
     token_stdin: str | None = None
     if with_token:
         if do_bb and do_jira:
