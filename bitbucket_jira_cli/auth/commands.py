@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import sys
 from typing import Annotated
+from typing import Any
 
+import questionary
 import typer
 
 from bitbucket_jira_cli._async import run
@@ -73,51 +75,81 @@ def _guide_jira() -> None:
     )
 
 
+def _ask(question: Any) -> str:
+    """Run a questionary prompt; abort cleanly on Ctrl-C / EOF (returns None)."""
+    answer = question.ask()
+    if answer is None:
+        raise typer.Abort
+    return str(answer).strip()
+
+
+_BB_MODE_CHOICES = [
+    questionary.Choice("API token (Atlassian account) — recommended", value="basic"),
+    questionary.Choice("Access token (repository / workspace / project)", value="bearer"),
+]
+
+
 def _login_bitbucket(config: Config, *, insecure: bool, token_stdin: str | None) -> None:
-    if token_stdin is None:
-        _guide_bitbucket()
-    else:
+    if token_stdin is not None:
+        # Non-interactive: reuse the configured mode/email, just store the token.
         console.print("[bold]Bitbucket Cloud[/bold]")
-    mode = (
-        typer.prompt(
-            "Auth mode: 'basic' (Atlassian API token) or 'bearer' (access token)",
-            default=config.bitbucket.auth_mode,
+        mode = config.bitbucket.auth_mode
+        email = config.bitbucket.email or ""
+        if mode == "basic" and not email:
+            msg = "Bitbucket --with-token needs bitbucket.email already configured."
+            raise AuthError(msg)
+        token = token_stdin
+    else:
+        _guide_bitbucket()
+        mode = _ask(
+            questionary.select(
+                "Authentication method",
+                choices=_BB_MODE_CHOICES,
+                default=config.bitbucket.auth_mode,
+            )
         )
-        .strip()
-        .lower()
-    )
-    workspace = typer.prompt("Default workspace", default=config.bitbucket.workspace or "").strip()
-    email = config.bitbucket.email or ""
-    if mode == "basic":
-        email = typer.prompt("Atlassian account email", default=email).strip()
-    token = token_stdin or typer.prompt("API token / access token", hide_input=True).strip()
+        config.bitbucket.workspace = (
+            _ask(questionary.text("Default workspace", default=config.bitbucket.workspace or ""))
+            or None
+        )
+        email = config.bitbucket.email or ""
+        if mode == "basic":
+            email = _ask(questionary.text("Atlassian account email", default=email))
+        label = "API token" if mode == "basic" else "Access token"
+        token = _ask(questionary.password(label))
+
     authorization = f"Bearer {token}" if mode == "bearer" else basic_header(email, token)
     try:
         name = run(_validate_bitbucket(authorization))
     except ApiError as exc:
         msg = f"Bitbucket rejected the credentials: {exc.message}"
         raise AuthError(msg) from exc
-    config.bitbucket.auth_mode = "bearer" if mode == "bearer" else "basic"
-    config.bitbucket.workspace = workspace or None
+    config.bitbucket.auth_mode = mode
     config.bitbucket.email = email or None
     where = set_token("bitbucket", token, insecure=insecure)
     success(f"Logged in to Bitbucket as {name} (token in {where}).")
 
 
 def _login_jira(config: Config, *, insecure: bool, token_stdin: str | None) -> None:
-    if token_stdin is None:
-        _guide_jira()
-    else:
+    if token_stdin is not None:
         console.print("[bold]Jira Cloud[/bold]")
-    site = (
-        typer.prompt(
-            "Site URL (e.g. https://your-domain.atlassian.net)", default=config.jira.site or ""
-        )
-        .strip()
-        .rstrip("/")
-    )
-    email = typer.prompt("Atlassian account email", default=config.jira.email or "").strip()
-    token = token_stdin or typer.prompt("API token", hide_input=True).strip()
+        site = (config.jira.site or "").rstrip("/")
+        email = config.jira.email or ""
+        if not (site and email):
+            msg = "Jira --with-token needs jira.site and jira.email already configured."
+            raise AuthError(msg)
+        token = token_stdin
+    else:
+        _guide_jira()
+        site = _ask(
+            questionary.text(
+                "Site URL (e.g. https://your-domain.atlassian.net)",
+                default=config.jira.site or "",
+            )
+        ).rstrip("/")
+        email = _ask(questionary.text("Atlassian account email", default=config.jira.email or ""))
+        token = _ask(questionary.password("API token"))
+
     try:
         name = run(_validate_jira(site, basic_header(email, token)))
     except ApiError as exc:
