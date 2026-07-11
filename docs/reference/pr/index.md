@@ -26,8 +26,9 @@ bj pr <command> [OPTIONS]
 | [`checkout`](checkout.md) | Check out a pull request's source branch locally. |
 | [`merge`](merge.md) | Merge a pull request; transition the linked Jira ticket to done. |
 | [`review`](review.md) | Approve, request changes on, or unapprove a pull request. |
-| [`comment`](comment.md) | Add a comment to a pull request. |
+| [`comment`](comment.md) | Comment on a PR: top-level, inline (--file/--line), reply (--reply-to), or manage. |
 | [`close`](close.md) | Decline (close) a pull request. |
+| [`task`](task.md) | Manage pull-request tasks (checklist items). |
 
 ## See also
 
