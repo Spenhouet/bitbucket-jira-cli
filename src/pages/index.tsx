@@ -1,6 +1,7 @@
 import React, { type ReactNode } from "react";
 import clsx from "clsx";
 import Link from "@docusaurus/Link";
+import useBaseUrl from "@docusaurus/useBaseUrl";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import Layout from "@theme/Layout";
 import CodeBlock from "@theme/CodeBlock";
@@ -19,9 +20,9 @@ function HomepageHeader() {
     <header className={clsx("hero", styles.heroBanner)}>
       <div className="container">
         <img
-          src="img/banner.png"
+          src={useBaseUrl("/img/banner.png")}
           alt={siteConfig.title}
-          className="hero-logo"
+          className="hero-banner"
         />
         <p className="hero__subtitle">{siteConfig.tagline}</p>
         <div className={styles.buttons}>
