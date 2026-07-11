@@ -1,0 +1,74 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "justMyCode": false,
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      }
+    },
+    {
+      "name": "bj --help",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/bitbucket_jira_cli/main.py",
+      "justMyCode": false,
+      "args": [
+        "--help"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}",
+        "BJ_CONFIG_PATH": "scratch/bj_config.json",
+        "BJ_LOG_LEVEL": "DEBUG"
+      }
+    },
+    {
+      "name": "bj pr create",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/bitbucket_jira_cli/main.py",
+      "justMyCode": false,
+      "args": [
+        "pr",
+        "create"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}",
+        "BJ_CONFIG_PATH": "scratch/bj_config.json",
+        "BJ_LOG_LEVEL": "DEBUG"
+      }
+    },
+    {
+      "name": "bj issue view",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/bitbucket_jira_cli/main.py",
+      "justMyCode": false,
+      "args": [
+        "issue",
+        "view",
+        "PROJ-42"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}",
+        "BJ_CONFIG_PATH": "scratch/bj_config.json",
+        "BJ_LOG_LEVEL": "DEBUG"
+      }
+    }
+  ]
+}
