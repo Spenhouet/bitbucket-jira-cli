@@ -24,6 +24,7 @@ from bitbucket_jira_cli.git import current_branch
 from bitbucket_jira_cli.git import last_commit_body
 from bitbucket_jira_cli.git import last_commit_subject
 from bitbucket_jira_cli.git import parse_branch_key
+from bitbucket_jira_cli.gitauth import git_env
 from bitbucket_jira_cli.interaction import checkbox
 from bitbucket_jira_cli.interaction import confirm
 from bitbucket_jira_cli.interaction import edit_text
@@ -416,7 +417,7 @@ def checkout(
     if not branch:
         msg = "Could not determine the PR's source branch."
         raise BjError(msg)
-    checkout_branch(branch)
+    checkout_branch(branch, env=git_env(config))
     success(f"Checked out {branch}")
 
 

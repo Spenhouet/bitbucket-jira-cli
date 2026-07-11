@@ -5,7 +5,7 @@ sidebar_label: clone
 
 # bj repo clone
 
-Clone a repository locally.
+Clone a repository locally (HTTPS uses your bj token automatically).
 
 ## Synopsis
 
@@ -19,6 +19,12 @@ bj repo clone [OPTIONS] REPO [DIRECTORY]
 | --- | --- |
 | `REPO` | WORKSPACE/REPO to clone. _(required)_ |
 | `DIRECTORY` | Target directory. |
+
+## Options
+
+| Option | Description |
+| --- | --- |
+| `--protocol <text>` | https or ssh (default: configured). |
 
 ## Examples
 

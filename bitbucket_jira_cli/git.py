@@ -49,12 +49,31 @@ def last_commit_body() -> str | None:
     return _git("log", "-1", "--pretty=%b") or None
 
 
-def checkout_branch(branch: str, remote: str = "origin") -> None:
-    """Fetch and check out ``branch`` from ``remote`` (create a local branch)."""
-    _git("fetch", remote, branch)
-    if _git("checkout", branch) is not None:
+def _git_env(*args: str, env: dict[str, str] | None) -> str | None:
+    try:
+        result = subprocess.run(  # noqa: S603
+            ["git", *args],  # noqa: S607
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+    except FileNotFoundError:
+        return None
+    return result.stdout.strip() if result.returncode == 0 else None
+
+
+def checkout_branch(
+    branch: str, remote: str = "origin", *, env: dict[str, str] | None = None
+) -> None:
+    """Fetch and check out ``branch`` from ``remote`` (create a local branch).
+
+    ``env`` (from ``gitauth.git_env``) authenticates the fetch for HTTPS remotes.
+    """
+    _git_env("fetch", remote, branch, env=env)
+    if _git_env("checkout", branch, env=env) is not None:
         return
-    if _git("checkout", "-b", branch, "--track", f"{remote}/{branch}") is not None:
+    if _git_env("checkout", "-b", branch, "--track", f"{remote}/{branch}", env=env) is not None:
         return
     msg = f"Could not check out branch '{branch}'."
     raise NotInRepoError(msg)
