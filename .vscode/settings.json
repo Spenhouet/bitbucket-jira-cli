@@ -1,0 +1,53 @@
+{
+  "files.eol": "\n",
+  "git.detectWorktrees": true,
+  "git.repositoryScanMaxDepth": 4,
+  "git.openRepositoryInParentFolders": "always",
+  "git.repositoryScanIgnoredFolders": ["node_modules"],
+  "scm.alwaysShowRepositories": true,
+  "editor.formatOnSave": true,
+  "autoDocstring.docstringFormat": "google",
+  "autoDocstring.startOnNewLine": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "jupyter.notebookFileRoot": "${workspaceFolder}",
+  "task.autoDetect": "off",
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "jupyter.debugJustMyCode": false,
+  "debugpy.debugJustMyCode": false,
+  "[markdown]": {
+    "diffEditor.ignoreTrimWhitespace": false,
+    "editor.unicodeHighlight.ambiguousCharacters": false,
+    "editor.unicodeHighlight.invisibleCharacters": false,
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "strings": "off",
+      "other": "on"
+    },
+    "editor.fontLigatures": true,
+    "editor.glyphMargin": false,
+    "editor.minimap.enabled": false,
+    "editor.wrappingIndent": "indent",
+    "editor.overviewRulerBorder": false,
+    "editor.lineHeight": 24,
+    "editor.renderWhitespace": "none",
+    "editor.suggest.showSnippets": false,
+    "editor.tabSize": 2,
+    "editor.wordBasedSuggestions": "off",
+    "files.autoSave": "onFocusChange",
+    "files.insertFinalNewline": true,
+  },
+  "markdown.updateLinksOnFileMove.enabled": "prompt",
+  "markdown.validate.enabled": true,
+}

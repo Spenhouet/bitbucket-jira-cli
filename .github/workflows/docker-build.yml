@@ -1,0 +1,51 @@
+name: Build Docker image
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - .github/workflows/docker-build.yml
+      - pyproject.toml
+      - uv.lock
+      - bitbucket_jira_cli/**
+  # Also build on push to main so the GHA cache is primed on the default
+  # branch. Tag-triggered publish runs fall back to the default branch's
+  # cache, which would otherwise stay cold until the first release.
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - .github/workflows/docker-build.yml
+      - pyproject.toml
+      - uv.lock
+      - bitbucket_jira_cli/**
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build image (PR verification)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build (no push)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max,ignore-error=true

@@ -1,0 +1,38 @@
+name: Question
+description: Ask a question about bitbucket-jira-cli
+labels: ["question"]
+body:
+  - type: textarea
+    attributes:
+      label: Question
+      description: Describe your question in detail.
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Version
+      description: What version of bitbucket-jira-cli are you using? (see `bitbucket-jira-cli version`)
+      placeholder: e.g., bitbucket-jira-cli 3.0.3
+    validations:
+      required: false
+
+  - type: input
+    attributes:
+      label: Bitbucket Version
+      description: |
+        What Bitbucket product are you using? Bitbucket Cloud or Server/Data Center.
+        Example: `Bitbucket Cloud` or `Bitbucket Server 8.9`
+      placeholder: e.g., Bitbucket Cloud or Bitbucket Server 8.9
+    validations:
+      required: false
+
+  - type: input
+    attributes:
+      label: Jira Version
+      description: |
+        What Jira version are you using (or not)? Include whether it's Cloud or Server/Data Center.
+        Example: `Jira Cloud` or `Jira Server 8.20.5`
+      placeholder: e.g., Jira Cloud or Jira Server 8.20.5
+    validations:
+      required: false

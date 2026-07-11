@@ -1,0 +1,109 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: "Version bump type"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - alpha
+          - beta
+          - rc
+      custom_version:
+        description: "Custom version (leave empty to use bump type)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    name: Bump version and create release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.export-version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked --all-groups
+
+      - name: Update version (custom)
+        if: ${{ github.event.inputs.custom_version != '' }}
+        run: |
+          uv version ${{ github.event.inputs.custom_version }}
+          echo "NEW_VERSION=${{ github.event.inputs.custom_version }}" >> $GITHUB_ENV
+
+      - name: Update version (bump)
+        if: ${{ github.event.inputs.custom_version == '' }}
+        run: |
+          NEW_VERSION=$(uv version --bump ${{ github.event.inputs.version_bump }} | awk '{print $NF}')
+          echo "NEW_VERSION=${NEW_VERSION}" >> $GITHUB_ENV
+
+      - name: Export version as job output
+        id: export-version
+        run: echo "value=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Test build with new version
+        run: |
+          uv build --no-sources
+          uv run --with dist/*.whl --no-project -- python -c "import bitbucket_jira_cli; print('Package imports successfully')"
+
+      - name: Update version references in README and docs
+        run: scripts/bump-docs-version.sh "${{ env.NEW_VERSION }}"
+
+      - name: Commit version update
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          # -u: stage modifications to tracked files only; never add untracked files.
+          git add -u pyproject.toml uv.lock README.md docs src
+          git diff --cached --quiet || git commit -m "Bump version to ${{ env.NEW_VERSION }}"
+          git push
+
+      - name: Create release tag
+        run: |
+          git tag "${{ env.NEW_VERSION }}"
+          git push origin "${{ env.NEW_VERSION }}"
+
+      - name: Create and publish GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ env.NEW_VERSION }}" \
+            --title "Release ${{ env.NEW_VERSION }}" \
+            --generate-notes
+
+  publish-python:
+    name: Publish Python package
+    needs: release
+    uses: ./.github/workflows/python-publish.yml
+    with:
+      version: ${{ needs.release.outputs.version }}
+    secrets: inherit
+
+  publish-docker:
+    name: Publish Docker image
+    needs: release
+    uses: ./.github/workflows/docker-publish.yml
+    with:
+      version: ${{ needs.release.outputs.version }}
+    secrets: inherit

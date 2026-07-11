@@ -1,0 +1,83 @@
+name: Bug report
+description: Report an error or unexpected behavior
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report an issue! We're glad to have you involved with bitbucket-jira-cli.
+
+        **Before reporting, please make sure to search through [existing issues](https://github.com/Spenhouet/bitbucket-jira-cli/issues?q=is:issue+is:open+label:bug) (including [closed](https://github.com/Spenhouet/bitbucket-jira-cli/issues?q=is:issue%20state:closed%20label:bug)).**
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Diagnostic info
+        Run `bj bugreport` and paste the full output in the **Diagnostic info** field below.
+        This command prints your version, system details, and configuration — with all secrets automatically redacted.
+
+  - type: textarea
+    attributes:
+      label: Description
+      description: |
+        A clear and concise description of the bug, including a minimal reproducible example.
+
+        Be sure to include the command you invoked (e.g., `bj pr create`).
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Diagnostic info
+      description: |
+        Paste the output of `bj bugreport` here.
+        This includes your version, Python/OS info, and configuration with secrets redacted.
+      placeholder: |
+        ## Bug Report Diagnostic Info
+
+        ### Version
+        bitbucket-jira-cli x.y.z
+
+        ### System
+        Python: ...
+        Platform: ...
+        Architecture: ...
+
+        ### Config
+        Config file: ...
+        ```yaml
+        ...
+        ```
+      render: markdown
+    validations:
+      required: false
+
+  - type: input
+    attributes:
+      label: Version
+      description: |
+        What version of bitbucket-jira-cli are you using?
+        (Already included in `bj bugreport` output — fill in here only if you didn't run that command.)
+      placeholder: e.g., bitbucket-jira-cli 4.0.3
+    validations:
+      required: false
+
+  - type: input
+    attributes:
+      label: Bitbucket Version
+      description: |
+        What Bitbucket product are you using? Bitbucket Cloud or Server/Data Center.
+        Example: `Bitbucket Cloud` or `Bitbucket Server 8.9`
+      placeholder: e.g., Bitbucket Cloud or Bitbucket Server 8.9
+    validations:
+      required: false
+
+  - type: input
+    attributes:
+      label: Jira Version
+      description: |
+        What Jira version are you using (or not)? Include whether it's Cloud or Server/Data Center.
+        Example: `Jira Cloud` or `Jira Server 8.20.5`
+      placeholder: e.g., Jira Cloud or Jira Server 8.20.5
+    validations:
+      required: false
