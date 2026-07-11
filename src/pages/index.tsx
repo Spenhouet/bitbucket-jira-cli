@@ -19,7 +19,7 @@ function HomepageHeader() {
     <header className={clsx("hero", styles.heroBanner)}>
       <div className="container">
         <img
-          src="img/logo.png"
+          src="img/banner.png"
           alt={siteConfig.title}
           className="hero-logo"
         />
