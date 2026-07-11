@@ -62,7 +62,14 @@ class JiraClient(BaseAsyncClient):
     ) -> list[dict[str, Any]]:
         issues: list[dict[str, Any]] = []
         token: str | None = None
-        payload_fields = fields or ["summary", "status", "assignee", "issuetype", "priority"]
+        payload_fields = fields or [
+            "summary",
+            "status",
+            "assignee",
+            "issuetype",
+            "priority",
+            "updated",
+        ]
         while True:
             body: dict[str, Any] = {
                 "jql": jql,

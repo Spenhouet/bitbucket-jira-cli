@@ -88,7 +88,14 @@ def list_issues(
         clauses.append(f'issuetype = "{issue_type}"')
     if label:
         clauses.append(f'labels = "{label}"')
-    query = jql or (" AND ".join(clauses) if clauses else "order by updated DESC")
+    # `/search/jql` rejects unbounded queries, so default to the current user's
+    # issues (a bounded restriction) when no --jql/filters are given.
+    if jql:
+        query = jql
+    elif clauses:
+        query = " AND ".join(clauses) + " ORDER BY updated DESC"
+    else:
+        query = "assignee = currentUser() ORDER BY updated DESC"
 
     async def _run() -> list[dict[str, Any]]:
         async with jira_client(config) as client:
