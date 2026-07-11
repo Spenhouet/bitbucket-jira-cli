@@ -190,6 +190,33 @@ def _login_jira(config: Config, *, insecure: bool, token_stdin: str | None) -> N
     success(f"Logged in to Jira as {name} (token in {where}).")
 
 
+def _pick_backends() -> str:
+    """Ask which backend(s) to log in to, defaulting to whatever is not yet set."""
+    bb_in = token_source("bitbucket") is not None
+    jira_in = token_source("jira") is not None
+    if not bb_in and jira_in:
+        default = "bitbucket"
+    elif bb_in and not jira_in:
+        default = "jira"
+    else:
+        default = "both"
+
+    def status(logged_in: bool) -> str:
+        return "logged in" if logged_in else "not logged in"
+
+    return _ask(
+        questionary.select(
+            "What would you like to log in to?",
+            choices=[
+                questionary.Choice("Both Bitbucket and Jira", value="both"),
+                questionary.Choice(f"Bitbucket only ({status(bb_in)})", value="bitbucket"),
+                questionary.Choice(f"Jira only ({status(jira_in)})", value="jira"),
+            ],
+            default=default,
+        )
+    )
+
+
 @auth_app.command()
 def login(
     bitbucket: Annotated[
@@ -219,16 +246,7 @@ def login(
     config = load_config()
     do_bb, do_jira = _which(bitbucket, jira)
     if not bitbucket and not jira and not with_token and is_interactive():
-        choice = _ask(
-            questionary.select(
-                "What would you like to log in to?",
-                choices=[
-                    questionary.Choice("Both Bitbucket and Jira", value="both"),
-                    questionary.Choice("Bitbucket only", value="bitbucket"),
-                    questionary.Choice("Jira only", value="jira"),
-                ],
-            )
-        )
+        choice = _pick_backends()
         do_bb = choice in ("both", "bitbucket")
         do_jira = choice in ("both", "jira")
     token_stdin: str | None = None
