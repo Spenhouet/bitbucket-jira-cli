@@ -46,6 +46,10 @@ class BitbucketConfig(BaseModel):
 class JiraConfig(BaseModel):
     site: str | None = None  # e.g. https://your-domain.atlassian.net
     email: str | None = None
+    # "site": unscoped token on the *.atlassian.net host (Basic auth).
+    # "gateway": scoped token on api.atlassian.com/ex/jira/{cloud_id} (least privilege).
+    auth_mode: Literal["site", "gateway"] = "site"
+    cloud_id: str | None = None
 
 
 class BranchKeyConfig(BaseModel):

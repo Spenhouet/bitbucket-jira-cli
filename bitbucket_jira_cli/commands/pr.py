@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import webbrowser
+from typing import TYPE_CHECKING
 from typing import Annotated
 from typing import Any
 
@@ -10,13 +11,12 @@ import questionary
 import typer
 
 from bitbucket_jira_cli.api.bitbucket import BitbucketClient
-from bitbucket_jira_cli.api.jira import JiraClient
-from bitbucket_jira_cli.auth.store import get_token
 from bitbucket_jira_cli.commands._common import emit
 from bitbucket_jira_cli.commands._common import resolve_repo
 from bitbucket_jira_cli.config import Config
 from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.context import bitbucket_authorization
+from bitbucket_jira_cli.context import jira_client_or_none
 from bitbucket_jira_cli.errors import BjError
 from bitbucket_jira_cli.git import RepoRef
 from bitbucket_jira_cli.git import checkout_branch
@@ -40,6 +40,9 @@ from bitbucket_jira_cli.render import render_pr_list
 from bitbucket_jira_cli.ui import console
 from bitbucket_jira_cli.ui import success
 
+if TYPE_CHECKING:
+    from bitbucket_jira_cli.api.jira import JiraClient
+
 pr_app = typer.Typer(help="Manage Bitbucket pull requests.", no_args_is_help=True)
 
 RepoOpt = Annotated[str | None, typer.Option("--repo", "-R", help="Target repo as WORKSPACE/REPO.")]
@@ -60,11 +63,7 @@ def _bb(config: Config) -> BitbucketClient:
 
 
 def _jira_if_configured(config: Config) -> JiraClient | None:
-    from bitbucket_jira_cli.auth.store import basic_header
-
-    if not (config.jira.site and config.jira.email and get_token("jira")):
-        return None
-    return JiraClient(config.jira.site, basic_header(config.jira.email, get_token("jira") or ""))
+    return jira_client_or_none(config)
 
 
 def _reviewer_ref(value: str) -> dict[str, str]:
