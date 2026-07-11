@@ -49,10 +49,14 @@ async def _validate_jira(site: str, authorization: str) -> str:
 
 def _login_bitbucket(config: Config, *, insecure: bool, token_stdin: str | None) -> None:
     console.print("[bold]Bitbucket Cloud[/bold]")
-    mode = typer.prompt(
-        "Auth mode: 'basic' (Atlassian API token) or 'bearer' (access token)",
-        default=config.bitbucket.auth_mode,
-    ).strip().lower()
+    mode = (
+        typer.prompt(
+            "Auth mode: 'basic' (Atlassian API token) or 'bearer' (access token)",
+            default=config.bitbucket.auth_mode,
+        )
+        .strip()
+        .lower()
+    )
     workspace = typer.prompt("Default workspace", default=config.bitbucket.workspace or "").strip()
     email = config.bitbucket.email or ""
     if mode == "basic":
@@ -73,9 +77,13 @@ def _login_bitbucket(config: Config, *, insecure: bool, token_stdin: str | None)
 
 def _login_jira(config: Config, *, insecure: bool, token_stdin: str | None) -> None:
     console.print("[bold]Jira Cloud[/bold]")
-    site = typer.prompt(
-        "Site URL (e.g. https://your-domain.atlassian.net)", default=config.jira.site or ""
-    ).strip().rstrip("/")
+    site = (
+        typer.prompt(
+            "Site URL (e.g. https://your-domain.atlassian.net)", default=config.jira.site or ""
+        )
+        .strip()
+        .rstrip("/")
+    )
     email = typer.prompt("Atlassian account email", default=config.jira.email or "").strip()
     token = token_stdin or typer.prompt("API token", hide_input=True).strip()
     try:
@@ -158,8 +166,7 @@ def _status_jira(config: Config) -> bool:
         console.print(f"[red]✗[/red] Jira: token from {src} rejected — {exc.message}")
         return False
     console.print(
-        f"[green]✓[/green] Jira: logged in as [bold]{name}[/bold] "
-        f"at {config.jira.site} ({src})"
+        f"[green]✓[/green] Jira: logged in as [bold]{name}[/bold] at {config.jira.site} ({src})"
     )
     return True
 

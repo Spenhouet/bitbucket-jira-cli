@@ -8,6 +8,12 @@ import typer
 
 from bitbucket_jira_cli import __version__
 from bitbucket_jira_cli.auth.commands import auth_app
+from bitbucket_jira_cli.commands.issue import issue_app
+from bitbucket_jira_cli.commands.misc import api
+from bitbucket_jira_cli.commands.misc import browse
+from bitbucket_jira_cli.commands.pipeline import pipeline_app
+from bitbucket_jira_cli.commands.pr import pr_app
+from bitbucket_jira_cli.commands.repo import repo_app
 from bitbucket_jira_cli.errors import BjError
 from bitbucket_jira_cli.ui import print_error
 
@@ -19,17 +25,12 @@ app = typer.Typer(
 )
 
 app.add_typer(auth_app, name="auth")
-
-# Placeholder groups — implemented in follow-up modules. Kept registered so
-# `bj --help` renders the full intended surface.
-repo_app = typer.Typer(help="Work with Bitbucket repositories.", no_args_is_help=True)
-pr_app = typer.Typer(help="Manage Bitbucket pull requests.", no_args_is_help=True)
-issue_app = typer.Typer(help="Manage Jira issues.", no_args_is_help=True)
-pipeline_app = typer.Typer(help="Work with Bitbucket Pipelines.", no_args_is_help=True)
 app.add_typer(repo_app, name="repo")
 app.add_typer(pr_app, name="pr")
 app.add_typer(issue_app, name="issue")
 app.add_typer(pipeline_app, name="pipeline")
+app.command(name="browse")(browse)
+app.command(name="api")(api)
 
 
 def _version_callback(value: bool) -> None:

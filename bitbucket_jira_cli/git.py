@@ -41,6 +41,25 @@ def current_branch() -> str | None:
     return _git("rev-parse", "--abbrev-ref", "HEAD") or None
 
 
+def last_commit_subject() -> str | None:
+    return _git("log", "-1", "--pretty=%s") or None
+
+
+def last_commit_body() -> str | None:
+    return _git("log", "-1", "--pretty=%b") or None
+
+
+def checkout_branch(branch: str, remote: str = "origin") -> None:
+    """Fetch and check out ``branch`` from ``remote`` (create a local branch)."""
+    _git("fetch", remote, branch)
+    if _git("checkout", branch) is not None:
+        return
+    if _git("checkout", "-b", branch, "--track", f"{remote}/{branch}") is not None:
+        return
+    msg = f"Could not check out branch '{branch}'."
+    raise NotInRepoError(msg)
+
+
 def _remote_url(remote: str = "origin") -> str | None:
     return _git("remote", "get-url", remote)
 
