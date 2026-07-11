@@ -22,4 +22,5 @@ def print_error(message: str) -> None:
 
 
 def success(message: str) -> None:
-    console.print(f"[green]✓[/green] {message}")
+    # Informational — goes to stderr so `--json` / rendered stdout stays clean.
+    err_console.print(f"[green]✓[/green] {message}")
