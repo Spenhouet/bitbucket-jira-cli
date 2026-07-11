@@ -57,13 +57,14 @@ Bitbucket and Jira use **separate** tokens; a token for one will not authenticat
 the other. See [Environment](./environment.md) for the full variable list and
 [`bj auth`](../reference/auth/index.md) for the login flow.
 
-## Token scopes
+## Tokens
 
-Create scoped API tokens at
-[id.atlassian.com](https://id.atlassian.com/manage-profile/security/api-tokens)
-("Create API token with scopes").
+Both tokens are created at
+[id.atlassian.com](https://id.atlassian.com/manage-profile/security/api-tokens).
 
-**Bitbucket** (app: Bitbucket) — grant these seven:
+### Bitbucket — scoped API token
+
+Use **"Create API token with scopes"**, app **Bitbucket**, and grant these seven:
 
 - `read:user:bitbucket` — required for the current-user check `bj auth login` runs
 - `read:workspace:bitbucket` — list workspace members (reviewer selection)
@@ -75,4 +76,14 @@ For granular API-token scopes, **write does not imply read** — tick both boxes
 for Pull Requests and Pipelines. `write:repository` is not needed (`bj` only
 reads and clones repositories).
 
-**Jira** (app: Jira): `read:jira-work`, `write:jira-work`, `read:jira-user`.
+### Jira — unscoped API token
+
+Use the plain **"Create API token"** button (no scope selection). `bj` sends it
+as Basic auth (email + token) against your `*.atlassian.net` site, the same as
+the `jira` and `go-jira` CLIs.
+
+Do **not** use a *scoped* Jira token: scoped tokens are only accepted on
+Atlassian's `api.atlassian.com/ex/jira/{cloudId}` gateway, which `bj` does not
+target — they return 401 against the site host. (If `bj` later adds gateway
+support, the equivalent scopes would be `read:jira-work`, `write:jira-work`,
+`read:jira-user`.)
