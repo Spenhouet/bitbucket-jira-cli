@@ -2,14 +2,55 @@ import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
+const baseUrl = "/bitbucket-jira-cli/";
+
 const config: Config = {
   title: "Bitbucket Jira CLI",
   tagline:
     "A gh-style CLI for Bitbucket pull requests, repos and pipelines, and Jira issues — with branch-name-as-Jira-key automation.",
   favicon: "img/favicon.svg",
 
+  // Full favicon set (generated with the banner). Docusaurus prefixes `favicon`
+  // with baseUrl automatically; headTags hrefs are literal, so build them from
+  // the same baseUrl constant to stay in sync.
+  headTags: [
+    {
+      tagName: "link",
+      attributes: {
+        rel: "apple-touch-icon",
+        sizes: "180x180",
+        href: `${baseUrl}img/apple-touch-icon.png`,
+      },
+    },
+    {
+      tagName: "link",
+      attributes: {
+        rel: "icon",
+        type: "image/png",
+        sizes: "32x32",
+        href: `${baseUrl}img/favicon-32x32.png`,
+      },
+    },
+    {
+      tagName: "link",
+      attributes: {
+        rel: "icon",
+        type: "image/png",
+        sizes: "16x16",
+        href: `${baseUrl}img/favicon-16x16.png`,
+      },
+    },
+    {
+      tagName: "link",
+      attributes: {
+        rel: "manifest",
+        href: `${baseUrl}img/site.webmanifest`,
+      },
+    },
+  ],
+
   url: "https://spenhouet.github.io",
-  baseUrl: "/bitbucket-jira-cli/",
+  baseUrl,
 
   organizationName: "Spenhouet",
   projectName: "bitbucket-jira-cli",
@@ -29,8 +70,11 @@ const config: Config = {
         docs: {
           sidebarPath: "./sidebars.ts",
           routeBasePath: "/",
-          editUrl:
-            "https://github.com/Spenhouet/bitbucket-jira-cli/edit/main/",
+          // Internal design docs use API notation ({workspace}, <KEY>) that
+          // Docusaurus would try to parse as MDX/JSX. They live in the repo for
+          // reference but are not part of the published site.
+          exclude: ["research/**", "plan/**"],
+          editUrl: "https://github.com/Spenhouet/bitbucket-jira-cli/edit/main/",
           showLastUpdateAuthor: true,
           showLastUpdateTime: true,
           // Versioning is driven by git tags via scripts/build-versions.mjs.
@@ -58,7 +102,7 @@ const config: Config = {
   ],
 
   themeConfig: {
-    image: "img/logo.png",
+    image: "img/banner.png",
     colorMode: {
       defaultMode: "dark",
       respectPrefersColorScheme: true,
@@ -146,7 +190,14 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ["bash", "powershell", "yaml", "json", "toml", "diff"],
+      additionalLanguages: [
+        "bash",
+        "powershell",
+        "yaml",
+        "json",
+        "toml",
+        "diff",
+      ],
     },
     docs: {
       sidebar: {

@@ -47,8 +47,35 @@ async def _validate_jira(site: str, authorization: str) -> str:
     return str(me.get("displayName") or me.get("emailAddress") or "?")
 
 
-def _login_bitbucket(config: Config, *, insecure: bool, token_stdin: str | None) -> None:
+ATLASSIAN_ID_URL = "https://id.atlassian.com/manage-profile/security/api-tokens"
+
+
+def _guide_bitbucket() -> None:
     console.print("[bold]Bitbucket Cloud[/bold]")
+    console.print(
+        f"[dim]Basic mode — create a scoped API token (app: Bitbucket):\n"
+        f"  {ATLASSIAN_ID_URL}\n"
+        f"  scopes: read:repository:bitbucket, read:pullrequest:bitbucket,\n"
+        f"          write:pullrequest:bitbucket, read:pipeline:bitbucket, "
+        f"write:pipeline:bitbucket\n"
+        f"Bearer mode — paste a repository/workspace access token from repo settings.[/dim]"
+    )
+
+
+def _guide_jira() -> None:
+    console.print("[bold]Jira Cloud[/bold]")
+    console.print(
+        f"[dim]Create a scoped API token (app: Jira):\n"
+        f"  {ATLASSIAN_ID_URL}\n"
+        f"  scopes: read:jira-work, write:jira-work, read:jira-user[/dim]"
+    )
+
+
+def _login_bitbucket(config: Config, *, insecure: bool, token_stdin: str | None) -> None:
+    if token_stdin is None:
+        _guide_bitbucket()
+    else:
+        console.print("[bold]Bitbucket Cloud[/bold]")
     mode = (
         typer.prompt(
             "Auth mode: 'basic' (Atlassian API token) or 'bearer' (access token)",
@@ -76,7 +103,10 @@ def _login_bitbucket(config: Config, *, insecure: bool, token_stdin: str | None)
 
 
 def _login_jira(config: Config, *, insecure: bool, token_stdin: str | None) -> None:
-    console.print("[bold]Jira Cloud[/bold]")
+    if token_stdin is None:
+        _guide_jira()
+    else:
+        console.print("[bold]Jira Cloud[/bold]")
     site = (
         typer.prompt(
             "Site URL (e.g. https://your-domain.atlassian.net)", default=config.jira.site or ""
