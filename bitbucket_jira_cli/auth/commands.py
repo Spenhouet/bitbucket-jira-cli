@@ -167,12 +167,12 @@ def _login_jira(config: Config, *, insecure: bool, token_stdin: str | None) -> N
                 "Authentication method", choices=_JIRA_MODE_CHOICES, default=config.jira.auth_mode
             )
         )
-        site = _ask(
-            questionary.text(
-                "Site URL (e.g. https://your-domain.atlassian.net)",
-                default=config.jira.site or "",
-            )
-        ).rstrip("/")
+        site_label = (
+            "Site URL, used to look up your cloudId (e.g. https://your-domain.atlassian.net)"
+            if mode == "gateway"
+            else "Site URL (e.g. https://your-domain.atlassian.net)"
+        )
+        site = _ask(questionary.text(site_label, default=config.jira.site or "")).rstrip("/")
         email = _ask(questionary.text("Atlassian account email", default=config.jira.email or ""))
         token = _ask(questionary.password("API token"))
 
