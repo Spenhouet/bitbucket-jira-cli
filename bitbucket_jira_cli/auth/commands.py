@@ -68,9 +68,11 @@ def _guide_bitbucket() -> None:
 def _guide_jira() -> None:
     console.print("[bold]Jira Cloud[/bold]")
     console.print(
-        f"[dim]Create a scoped API token (app: Jira):\n"
-        f"  {ATLASSIAN_ID_URL}\n"
-        f"  scopes: read:jira-work, write:jira-work, read:jira-user[/dim]",
+        f"[dim]Create an API token (use the plain 'Create API token' — no scope\n"
+        f"  selection needed): {ATLASSIAN_ID_URL}\n"
+        f"  bj uses Basic auth (email + token) against your site host.\n"
+        f"  Note: 'scoped' tokens only work via Atlassian's api.atlassian.com gateway,\n"
+        f"  which bj does not target — use an unscoped token.[/dim]",
         highlight=False,
     )
 

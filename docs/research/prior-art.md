@@ -191,9 +191,17 @@ store **two independent credentials**.
   API-token scopes — request both. `read:account` is **not** a Bitbucket
   API-token scope (it's a legacy OAuth scope); `write:repository` is not needed
   since `bj` only reads and clones repos.
-- **Jira Cloud:** **API token + Basic auth** `base64(email:token)`. Scoped-token
-  scopes: `read/write:jira-work` (or fine-grained `read/write:issue:jira`,
-  `read:issue.transition:jira`, `write:comment:jira`, `read/write:issue-link:jira`).
+- **Jira Cloud:** **unscoped API token + Basic auth** `base64(email:token)`
+  against the `*.atlassian.net` site host — what `bj` uses (and what jira-cli /
+  go-jira use). **Scoped** Jira tokens differ from Bitbucket's: they are only
+  accepted on the `api.atlassian.com/ex/jira/{cloudId}` gateway, not the site
+  host, so a scoped token 401s against `bj`. If gateway support is added, the
+  covering scopes would be `read:jira-work`, `write:jira-work`, `read:jira-user`
+  (classic) — sufficient for issues, comments, transitions and remote links;
+  fine-grained equivalents are `read/write:issue:jira`, `read:issue.transition:jira`,
+  `write:comment:jira`, `read/write:issue.remote-link:jira` (note `issue.remote-link`
+  with a dot — distinct from the internal `issue-link` scope). Write does not
+  imply read; grant both.
 - OAuth 2.0 (3LO) exists for multi-user distribution; overkill for a single-user
   CLI. The same Atlassian email may back both Basic credentials, but the token
   strings are distinct and separately revocable.
