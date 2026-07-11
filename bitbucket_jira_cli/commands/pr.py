@@ -38,6 +38,7 @@ from bitbucket_jira_cli.jira_ops import transition_to
 from bitbucket_jira_cli.render import render_pr
 from bitbucket_jira_cli.render import render_pr_list
 from bitbucket_jira_cli.ui import console
+from bitbucket_jira_cli.ui import err_console
 from bitbucket_jira_cli.ui import success
 
 if TYPE_CHECKING:
@@ -178,9 +179,11 @@ async def _do_create(
                 await link_pr(jira, key, url, title)
                 target = config.transitions.on_pr_create
                 if target and await transition_to(jira, key, target):
-                    console.print(f"[green]✓[/green] {key} → {target}")
+                    err_console.print(f"[green]✓[/green] {key} → {target}")
                 elif target:
-                    console.print(f"[yellow]![/yellow] {key}: no '{target}' transition available")
+                    err_console.print(
+                        f"[yellow]![/yellow] {key}: no '{target}' transition available"
+                    )
     return pr
 
 
@@ -448,9 +451,9 @@ async def _transition_after_merge(config: Config, key: str) -> None:
     async with jira:
         target = config.transitions.on_pr_merge
         if target and await transition_to(jira, key, target):
-            console.print(f"[green]✓[/green] {key} → {target}")
+            err_console.print(f"[green]✓[/green] {key} → {target}")
         elif target:
-            console.print(f"[yellow]![/yellow] {key}: no '{target}' transition")
+            err_console.print(f"[yellow]![/yellow] {key}: no '{target}' transition")
 
 
 @pr_app.command()
