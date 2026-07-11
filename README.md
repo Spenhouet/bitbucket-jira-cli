@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/Spenhouet/bitbucket-jira-cli"><img src="https://raw.githubusercontent.com/Spenhouet/bitbucket-jira-cli/main/static/img/banner.png" alt="bitbucket-jira-cli"></a>
+  <a href="https://github.com/Spenhouet/bitbucket-jira-cli"><img src="https://raw.githubusercontent.com/Spenhouet/bitbucket-jira-cli/main/static/img/banner.png" style="border-radius: 15px;" alt="bitbucket-jira-cli"></a>
 </p>
 <p align="center">
   <em>A gh-style CLI for Bitbucket (pull requests, repos, pipelines) and Jira (issues), with branch-name-as-Jira-key automation.</em>
