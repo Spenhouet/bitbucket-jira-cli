@@ -19,7 +19,7 @@ bj repo <command> [OPTIONS]
 | --- | --- |
 | [`view`](view.md) | View a repository. |
 | [`list`](list.md) | List repositories in a workspace. |
-| [`clone`](clone.md) | Clone a repository locally. |
+| [`clone`](clone.md) | Clone a repository locally (HTTPS uses your bj token automatically). |
 | [`set-default`](set-default.md) | Store the default workspace used when not inside a clone. |
 
 ## See also

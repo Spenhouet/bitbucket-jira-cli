@@ -18,6 +18,7 @@ from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.config import save_config
 from bitbucket_jira_cli.context import bitbucket_authorization
 from bitbucket_jira_cli.errors import BjError
+from bitbucket_jira_cli.gitauth import git_env
 from bitbucket_jira_cli.interaction import run_with_status
 from bitbucket_jira_cli.render import render_repo
 from bitbucket_jira_cli.render import render_repo_list
@@ -96,23 +97,37 @@ def list_repos(
 def clone(
     repo: Annotated[str, typer.Argument(help="WORKSPACE/REPO to clone.")],
     directory: Annotated[str | None, typer.Argument(help="Target directory.")] = None,
+    protocol: Annotated[
+        str | None, typer.Option("--protocol", help="https or ssh (default: configured).")
+    ] = None,
 ) -> None:
-    """Clone a repository locally."""
+    """Clone a repository locally (HTTPS uses your bj token automatically)."""
     config = load_config()
     ref = resolve_repo(repo)
+    proto = (protocol or config.git_protocol).lower()
+    if proto not in ("https", "ssh"):
+        msg = "--protocol must be 'https' or 'ssh'."
+        raise BjError(msg)
 
     async def _run() -> str:
         async with _bb(config) as client:
             repo_obj = await client.get_repo(ref.workspace, ref.repo_slug)
-        return _clone_url(repo_obj, config.git_protocol)
+        return _clone_url(repo_obj, proto)
 
     url = run_with_status("Loading repository…", _run())
+    # HTTPS clones authenticate non-interactively with the stored token; SSH uses
+    # the user's keys (token env is harmless there — git won't call askpass).
+    env = git_env(config) if proto == "https" else None
     args = ["git", "clone", url]
     if directory:
         args.append(directory)
-    result = subprocess.run(args, check=False)  # noqa: S603
+    result = subprocess.run(args, check=False, env=env)  # noqa: S603
     if result.returncode != 0:
-        msg = "git clone failed."
+        if proto == "ssh":
+            hint = "Ensure your SSH key is registered with Bitbucket, or use --protocol https."
+        else:
+            hint = "Check `bj auth status` and that the repository exists."
+        msg = f"git clone failed. {hint}"
         raise BjError(msg)
     success(f"Cloned {ref} into {directory or Path(ref.repo_slug).name}")
 
