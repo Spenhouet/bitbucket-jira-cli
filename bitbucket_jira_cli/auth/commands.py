@@ -69,7 +69,7 @@ def _guide_bitbucket() -> None:
         f"    read:pullrequest:bitbucket, write:pullrequest:bitbucket,\n"
         f"    read:pipeline:bitbucket, write:pipeline:bitbucket, admin:pipeline:bitbucket,\n"
         f"    read:ssh-key:bitbucket, write:ssh-key:bitbucket, delete:ssh-key:bitbucket,\n"
-        f"    read:snippet:bitbucket, delete:snippet:bitbucket\n"
+        f"    read:snippet:bitbucket, write:snippet:bitbucket, delete:snippet:bitbucket\n"
         f"Bearer mode: paste a repository/workspace access token from repo settings.[/dim]",
         highlight=False,
     )

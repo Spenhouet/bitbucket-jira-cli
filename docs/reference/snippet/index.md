@@ -18,6 +18,7 @@ bj snippet <command> [OPTIONS]
 | Command | Description |
 | --- | --- |
 | [`list`](list.md) | List snippets in a workspace. |
+| [`create`](create.md) | Create a snippet from files or stdin (like `gh gist create`). |
 | [`view`](view.md) | View a snippet's metadata and files. |
 | [`delete`](delete.md) | Delete a snippet. |
 
