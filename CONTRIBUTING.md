@@ -149,18 +149,27 @@ def test_feature_description() -> None:
 
 ## Documentation
 
-The docs site is built with Docusaurus (`docs/`, `npm run build`). The
-**command reference** under `docs/reference/` is generated from the live CLI —
-do not edit those pages by hand. After changing any command, flag, or help
-string, regenerate and commit them:
+The docs site is authored as [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/)
+and built with [Zensical](https://zensical.org/) (`mkdocs.yml`, `docs/`). Install
+the docs toolchain with `uv sync --group docs`, then:
+
+```bash
+uv run zensical serve            # live preview at http://127.0.0.1:8000
+uv run zensical build --strict   # production build into site/
+```
+
+The **command reference** under `docs/reference/` is generated from the live CLI,
+so do not edit those pages by hand. The generator also regenerates the reference
+section of the `mkdocs.yml` nav. After changing any command, flag, or help string,
+regenerate and commit both:
 
 ```bash
 uv run python scripts/gen_cli_docs.py
 ```
 
-Hand-written pages (intro, installation, usage, and the guides under
-`docs/guides/`) are edited normally. Extended command descriptions and examples
-live in the maps at the top of `scripts/gen_cli_docs.py`.
+Hand-written pages (the landing page, intro, installation, usage, and the guides
+under `docs/guides/`) are edited normally. Extended command descriptions and
+examples live in the maps at the top of `scripts/gen_cli_docs.py`.
 
 ## Code Quality
 
@@ -197,8 +206,7 @@ Before committing:
 
 ## Release Process
 
-> [!NOTE]
-> Only relevant for maintainers.
+> **Note:** Only relevant for maintainers.
 
 ### Automated Release
 
