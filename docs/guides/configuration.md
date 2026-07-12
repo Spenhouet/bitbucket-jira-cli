@@ -106,8 +106,12 @@ The `delete:*` and `admin:*` scopes are separate on purpose: a token with only
   `*.atlassian.net` site host, like the `jira` and `go-jira` CLIs. This becomes
   `jira.auth_mode: site` in `config.yml`.
 - **Scoped (least privilege)**: **"Create API token with scopes"**, app
-  **Jira**, scopes `read:jira-work`, `write:jira-work`, `read:jira-user`, and
-  `manage:jira-project`. Scoped Jira tokens are only accepted on Atlassian's
+  **Jira**, with all of these scopes:
+  - `read:jira-work`, `write:jira-work`, `read:jira-user`
+  - `manage:jira-project`
+  - `read:project:jira`, `read:board-scope:jira-software`, `read:sprint:jira-software`
+
+  Scoped Jira tokens are only accepted on Atlassian's
   `api.atlassian.com/ex/jira/{cloudId}` gateway (they 401 against the site host),
   so `bj` resolves your site's cloudId from `{site}/_edge/tenant_info` at login,
   stores it as `jira.cloud_id`, and targets the gateway. This becomes
@@ -115,10 +119,8 @@ The `delete:*` and `admin:*` scopes are separate on purpose: a token with only
 
 `write:jira-work` covers issue create/edit, comments, transitions and remote
 issue links; `read:jira-work` covers search and reads; `read:jira-user` covers
-the current-user check; `manage:jira-project` covers `bj release` (creating,
-editing, and deleting Jira versions). Write does not imply read, so grant both.
-
-`bj board` uses the Jira Software agile API. Atlassian only exposes the agile
-scopes to OAuth/Forge apps, not to scoped API tokens, so `bj board` works only
-with an **unscoped** Jira token (`jira.auth_mode: site`). With a scoped
-(gateway) token the agile endpoints return "Unauthorized; scope does not match".
+the current-user check; `manage:jira-project` covers `bj release` (Jira
+versions); and the `read:project:jira` + `*:jira-software` scopes cover
+`bj board` (the agile API). "Get all boards" needs both
+`read:board-scope:jira-software` and `read:project:jira`, so granting the board
+scope without `read:project:jira` returns "scope does not match".

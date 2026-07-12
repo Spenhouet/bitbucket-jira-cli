@@ -82,10 +82,10 @@ def _guide_jira() -> None:
         f"  • Unscoped (simplest): the plain 'Create API token' button, no scopes.\n"
         f"  • Scoped (least privilege): 'Create API token with scopes', app: Jira,\n"
         f"    with all of these scopes:\n"
-        f"      read:jira-work, write:jira-work, read:jira-user, manage:jira-project\n"
+        f"      read:jira-work, write:jira-work, read:jira-user, manage:jira-project,\n"
+        f"      read:project:jira, read:board-scope:jira-software, read:sprint:jira-software\n"
         f"    bj addresses it through the api.atlassian.com gateway (cloudId resolved\n"
-        f"    automatically). Note: `bj board` needs the unscoped token below, since\n"
-        f"    Atlassian does not offer Jira Software (agile) scopes to API tokens.\n"
+        f"    automatically).\n"
         f"  Pick the matching method at the next prompt.[/dim]",
         highlight=False,
     )
