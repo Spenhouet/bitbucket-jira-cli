@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bitbucket-jira-cli"
-version = "1.0.0"
+version = "1.0.1"
 description = "A gh-style CLI for Bitbucket (PRs, repos, pipelines) and Jira (issues), with branch-name-as-Jira-key automation"
 keywords = ["bitbucket", "jira", "atlassian", "cli", "pull-request", "gh"]
 readme = "README.md"
