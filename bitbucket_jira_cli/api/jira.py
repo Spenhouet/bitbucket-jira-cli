@@ -45,6 +45,9 @@ class JiraClient(BaseAsyncClient):
     async def myself(self) -> dict[str, Any]:
         return await self.get_json("/myself")
 
+    async def get_project(self, key: str) -> dict[str, Any]:
+        return await self.get_json(f"/project/{key}")
+
     # -- issues -------------------------------------------------------------
     async def get_issue(
         self, key: str, *, fields: list[str] | None = None, expand: list[str] | None = None
@@ -135,6 +138,43 @@ class JiraClient(BaseAsyncClient):
 
     async def get_remote_links(self, key: str) -> list[dict[str, Any]]:
         return await self.get_json(f"/issue/{key}/remotelink")
+
+    async def delete_issue(self, key: str) -> None:
+        await self.request("DELETE", f"/issue/{key}")
+
+    # -- versions / releases ------------------------------------------------
+    async def list_versions(self, project: str) -> list[dict[str, Any]]:
+        return await self.get_json(f"/project/{project}/versions")
+
+    async def get_version(self, version_id: str) -> dict[str, Any]:
+        return await self.get_json(f"/version/{version_id}")
+
+    async def create_version(self, body: dict[str, Any]) -> dict[str, Any]:
+        response = await self.request("POST", "/version", json=body)
+        return response.json()
+
+    async def update_version(self, version_id: str, body: dict[str, Any]) -> dict[str, Any]:
+        response = await self.request("PUT", f"/version/{version_id}", json=body)
+        return response.json()
+
+    async def delete_version(self, version_id: str) -> None:
+        await self.request("DELETE", f"/version/{version_id}")
+
+    # -- agile boards / sprints (project-planning analog) ------------------
+    def _agile(self, path: str) -> str:
+        """Absolute URL for the Jira Software agile API (sibling of /rest/api/3)."""
+        root = str(self._client.base_url).rstrip("/")
+        root = root.removesuffix("/rest/api/3")
+        return f"{root}/rest/agile/1.0{path}"
+
+    async def list_boards(self, *, project: str | None = None) -> list[dict[str, Any]]:
+        params = {"projectKeyOrId": project} if project else None
+        data = await self.get_json(self._agile("/board"), params=params)
+        return data.get("values", [])
+
+    async def list_sprints(self, board_id: int) -> list[dict[str, Any]]:
+        data = await self.get_json(self._agile(f"/board/{board_id}/sprint"))
+        return data.get("values", [])
 
     # -- generic passthrough (bj api) --------------------------------------
     async def raw(

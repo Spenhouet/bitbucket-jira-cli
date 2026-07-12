@@ -18,10 +18,14 @@ from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.context import bitbucket_authorization
 from bitbucket_jira_cli.context import bitbucket_client
 from bitbucket_jira_cli.context import jira_client
+from bitbucket_jira_cli.context import jira_client_or_none
 from bitbucket_jira_cli.errors import BjError
 from bitbucket_jira_cli.git import current_branch
 from bitbucket_jira_cli.git import parse_branch_key
+from bitbucket_jira_cli.git import repo_ref_from_remote
 from bitbucket_jira_cli.interaction import run_with_status
+from bitbucket_jira_cli.render import render_issue_list
+from bitbucket_jira_cli.render import render_pr_list
 from bitbucket_jira_cli.ui import console
 
 
@@ -109,3 +113,32 @@ def api(
     if backend == "bitbucket":
         bitbucket_authorization(config)
     run_with_status("Requesting…", _run())
+
+
+def status() -> None:
+    """Show a dashboard: your open Jira issues and the current repo's open PRs."""
+    config = load_config()
+    jira = jira_client_or_none(config)
+    if jira:
+        jql = "assignee = currentUser() AND resolution = Unresolved ORDER BY updated DESC"
+
+        async def _issues() -> list[Any]:
+            async with jira as client:
+                return await client.search(jql, limit=10)
+
+        console.print("[bold]Assigned Jira issues[/bold]")
+        render_issue_list(run_with_status("Loading issues…", _issues()))
+
+    ref = repo_ref_from_remote()
+    if ref:
+
+        async def _prs() -> list[Any]:
+            async with bitbucket_client(config) as client:
+                return await client.list_prs(ref.workspace, ref.repo_slug, state="OPEN", limit=10)
+
+        console.print("\n[bold]Open pull requests[/bold] [dim](current repo)[/dim]")
+        render_pr_list(run_with_status("Loading pull requests…", _prs()))
+    if not jira and not ref:
+        console.print(
+            "[dim]Nothing to show: not logged in to Jira and not in a Bitbucket repo.[/dim]"
+        )

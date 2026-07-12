@@ -25,6 +25,8 @@ bj auth <command> [OPTIONS]
 | [`status`](status.md) | Show which backends are configured and validate the stored tokens. |
 | [`logout`](logout.md) | Remove stored credentials for one or both backends. |
 | [`token`](token.md) | Print the stored token for a backend (for scripting). |
+| [`setup-git`](setup-git.md) | Configure git to authenticate bitbucket.org HTTPS using your bj token. |
+| [`git-credential`](git-credential.md) | Git credential helper: emit the Bitbucket token for bitbucket.org (get only). |
 
 ## See also
 

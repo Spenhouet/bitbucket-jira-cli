@@ -27,16 +27,42 @@ bj <command> [OPTIONS]
 | [`bj pr`](pr/index.md) | Manage Bitbucket pull requests. |
 | [`bj issue`](issue/index.md) | Manage Jira issues. |
 
+## Jira planning
+
+| Command | Description |
+| --- | --- |
+| [`bj release`](release/index.md) | Manage Jira project versions (releases). |
+| [`bj board`](board/index.md) | Work with Jira boards and sprints. |
+
 ## Pipelines
 
 | Command | Description |
 | --- | --- |
 | [`bj pipeline`](pipeline/index.md) | Work with Bitbucket Pipelines. |
+| [`bj variable`](variable/index.md) | Manage Bitbucket Pipelines variables (use --secured for secrets). |
+
+## Search and status
+
+| Command | Description |
+| --- | --- |
+| [`bj search`](search/index.md) | Search Bitbucket and Jira. |
+| [`bj status`](status.md) | Show a dashboard: your open Jira issues and the current repo's open PRs. |
+
+## Configuration
+
+| Command | Description |
+| --- | --- |
+| [`bj config`](config/index.md) | Read and write bj configuration. |
+| [`bj alias`](alias/index.md) | Create command shortcuts. |
+| [`bj ssh-key`](ssh-key/index.md) | Manage your Bitbucket account SSH keys. |
 
 ## Utility
 
 | Command | Description |
 | --- | --- |
+| [`bj skill`](skill/index.md) | Install the bj agent skill into a coding agent (mirrors `gh skill`). |
+| [`bj snippet`](snippet/index.md) | Work with Bitbucket snippets. |
+| [`bj ruleset`](ruleset/index.md) | Inspect Bitbucket branch restrictions. |
 | [`bj browse`](browse.md) | Open the repository, current PR, or branch's Jira issue in the browser. |
 | [`bj api`](api.md) | Make an authenticated request to the Bitbucket or Jira API. |
 

@@ -815,3 +815,102 @@ def task_delete(
             return resolved
 
     success(f"Deleted task {task_id} on PR #{run_with_status('Deleting task…', _run())}")
+
+
+_CHECK_COLORS = {
+    "SUCCESSFUL": "green",
+    "FAILED": "red",
+    "INPROGRESS": "yellow",
+    "STOPPED": "yellow",
+}
+
+
+@pr_app.command()
+def checks(
+    pr_id: Annotated[int | None, typer.Argument(help="PR id (default: current branch).")] = None,
+    repo: RepoOpt = None,
+    as_json: JsonOpt = False,
+    jq: JqOpt = None,
+) -> None:
+    """Show the build/commit statuses (CI checks) for a pull request."""
+    config = load_config()
+    ref = resolve_repo(repo)
+
+    async def _run() -> list[dict[str, Any]]:
+        async with _bb(config) as client:
+            resolved = await _resolve_id(client, ref, pr_id)
+            return await client.pr_statuses(ref.workspace, ref.repo_slug, resolved)
+
+    statuses = run_with_status("Loading checks…", _run())
+    if emit(statuses, as_json=as_json, jq=jq):
+        return
+    if not statuses:
+        console.print("[dim]No checks reported for this pull request.[/dim]")
+        return
+    for status in statuses:
+        state = str(status.get("state", "")).upper()
+        color = _CHECK_COLORS.get(state, "white")
+        name = status.get("name") or status.get("key", "")
+        url = status.get("url", "")
+        console.print(f"[{color}]{state or '?'}[/{color}] {name} [dim]{url}[/dim]")
+
+
+@pr_app.command()
+def ready(
+    pr_id: Annotated[int | None, typer.Argument(help="PR id (default: current branch).")] = None,
+    undo: Annotated[bool, typer.Option("--undo", help="Convert back to a draft instead.")] = False,
+    repo: RepoOpt = None,
+) -> None:
+    """Mark a draft pull request as ready for review (or --undo back to draft)."""
+    config = load_config()
+    ref = resolve_repo(repo)
+
+    async def _run() -> int:
+        async with _bb(config) as client:
+            resolved = await _resolve_id(client, ref, pr_id)
+            await client.update_pr(ref.workspace, ref.repo_slug, resolved, {"draft": undo})
+            return resolved
+
+    resolved = run_with_status("Updating…", _run())
+    success(f"PR #{resolved} marked {'draft' if undo else 'ready for review'}")
+
+
+@pr_app.command()
+def reopen(
+    pr_id: Annotated[int, typer.Argument(help="Declined PR id to reopen.")],
+    repo: RepoOpt = None,
+    as_json: JsonOpt = False,
+    jq: JqOpt = None,
+) -> None:
+    """Reopen a declined pull request by opening a fresh one from the same branches.
+
+    Bitbucket declined PRs are terminal, so this creates a new PR with the same
+    source and destination branches, title, and description.
+    """
+    config = load_config()
+    ref = resolve_repo(repo)
+
+    async def _run() -> tuple[dict[str, Any], dict[str, Any]]:
+        async with _bb(config) as client:
+            old = await client.get_pr(ref.workspace, ref.repo_slug, pr_id)
+            src = old.get("source", {}).get("branch", {}).get("name")
+            dst = old.get("destination", {}).get("branch", {}).get("name")
+            if not src or not dst:
+                msg = f"Could not read the branches of PR #{pr_id}."
+                raise BjError(msg)
+            payload: dict[str, Any] = {
+                "title": old.get("title", ""),
+                "source": {"branch": {"name": src}},
+                "destination": {"branch": {"name": dst}},
+            }
+            description = old.get("summary", {}).get("raw") or old.get("description")
+            if description:
+                payload["description"] = description
+            new = await client.create_pr(ref.workspace, ref.repo_slug, payload)
+            return old, new
+
+    old, new = run_with_status("Reopening…", _run())
+    if not emit(new, as_json=as_json, jq=jq):
+        src = old.get("source", {}).get("branch", {}).get("name")
+        dst = old.get("destination", {}).get("branch", {}).get("name")
+        success(f"Opened PR #{new.get('id')} ({src} → {dst}), reopening declined #{pr_id}")

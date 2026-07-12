@@ -22,7 +22,9 @@
 
 `bj` brings [GitHub `gh`](https://cli.github.com/) ergonomics to Bitbucket and
 Jira. It manages Bitbucket pull requests, repositories and pipelines and Jira
-issues from a single noun-first command surface.
+issues from a single noun-first command surface. It is terminal-native and
+scriptable, so it pairs well with AI coding agents (see
+[Coding agents](https://spenhouet.github.io/bitbucket-jira-cli/guides/agents)).
 
 The signature feature is **branch-name-as-Jira-key**: your current git branch
 carries a Jira key (e.g. `feature/PROJ-42-thing`), and commands use it to
@@ -68,6 +70,20 @@ bj pr view            # show the PR for the current branch
 bj issue view PROJ-42 # show the Jira issue
 bj pipeline list      # list Bitbucket Pipelines runs
 ```
+
+### 4. Use it with AI agents (optional)
+
+`bj` ships an [agent skill](https://agentskills.io/), so AI coding agents
+(Claude Code, Copilot, Cursor, Codex, Gemini CLI) can drive it the way they
+drive `gh`. Install it like `gh skill install`, but from the package you already
+have:
+
+```sh
+bj skill install --agent claude-code
+```
+
+See the [Coding agents](https://spenhouet.github.io/bitbucket-jira-cli/guides/agents)
+guide.
 
 ## Documentation
 

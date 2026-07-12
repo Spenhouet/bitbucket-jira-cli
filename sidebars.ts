@@ -15,6 +15,7 @@ const sidebars: SidebarsConfig = {
       collapsed: false,
       items: [
         "guides/branch-key",
+        "guides/agents",
         "guides/configuration",
         "guides/formatting",
         "guides/environment",

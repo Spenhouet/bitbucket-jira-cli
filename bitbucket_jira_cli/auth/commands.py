@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from typing import Annotated
 from typing import Any
@@ -26,6 +27,7 @@ from bitbucket_jira_cli.config import save_config
 from bitbucket_jira_cli.context import jira_rest_base
 from bitbucket_jira_cli.errors import ApiError
 from bitbucket_jira_cli.errors import AuthError
+from bitbucket_jira_cli.gitauth import bitbucket_git_username
 from bitbucket_jira_cli.interaction import is_interactive
 from bitbucket_jira_cli.ui import console
 from bitbucket_jira_cli.ui import success
@@ -364,3 +366,39 @@ def token(
     if not value:
         raise typer.Exit(1)
     sys.stdout.write(value + "\n")
+
+
+_BB_HOST = "https://bitbucket.org"
+
+
+@auth_app.command(name="setup-git")
+def setup_git() -> None:
+    """Configure git to authenticate bitbucket.org HTTPS using your bj token."""
+    for args in (
+        ["config", "--global", "--replace-all", f"credential.{_BB_HOST}.helper", ""],
+        ["config", "--global", "--add", f"credential.{_BB_HOST}.helper", "!bj auth git-credential"],
+    ):
+        subprocess.run(["git", *args], check=True)  # noqa: S603, S607
+    success("Configured git to use bj for bitbucket.org HTTPS authentication.")
+
+
+@auth_app.command(name="git-credential", hidden=True)
+def git_credential(
+    operation: Annotated[str, typer.Argument(help="git credential operation (get/store/erase).")],
+) -> None:
+    """Git credential helper: emit the Bitbucket token for bitbucket.org (get only)."""
+    if operation != "get":
+        return
+    request: dict[str, str] = {}
+    for line in sys.stdin:
+        stripped = line.strip()
+        if "=" in stripped:
+            key, val = stripped.split("=", 1)
+            request[key] = val
+    if request.get("host") != "bitbucket.org":
+        return
+    token_value = get_token("bitbucket")
+    if not token_value:
+        return
+    username = bitbucket_git_username(load_config())
+    sys.stdout.write(f"username={username}\npassword={token_value}\n")

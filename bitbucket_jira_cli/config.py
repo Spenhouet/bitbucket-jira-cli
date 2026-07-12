@@ -73,6 +73,7 @@ class Config(BaseModel):
     jira: JiraConfig = Field(default_factory=JiraConfig)
     branch_key: BranchKeyConfig = Field(default_factory=BranchKeyConfig)
     transitions: TransitionsConfig = Field(default_factory=TransitionsConfig)
+    aliases: dict[str, str] = Field(default_factory=dict)
 
 
 def load_config() -> Config:
