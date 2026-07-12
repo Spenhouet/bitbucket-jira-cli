@@ -32,7 +32,7 @@ bj <command> [OPTIONS]
 | Command | Description |
 | --- | --- |
 | [`bj release`](release/index.md) | Manage Jira project versions (releases). |
-| [`bj board`](board/index.md) | Work with Jira boards and sprints (needs an unscoped Jira token). |
+| [`bj board`](board/index.md) | Work with Jira boards and sprints. |
 
 ## Pipelines
 

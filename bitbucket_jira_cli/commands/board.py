@@ -13,10 +13,7 @@ from bitbucket_jira_cli.context import jira_client
 from bitbucket_jira_cli.interaction import run_with_status
 from bitbucket_jira_cli.ui import console
 
-board_app = typer.Typer(
-    help="Work with Jira boards and sprints (needs an unscoped Jira token).",
-    no_args_is_help=True,
-)
+board_app = typer.Typer(help="Work with Jira boards and sprints.", no_args_is_help=True)
 
 JsonOpt = Annotated[bool, typer.Option("--json", help="Output raw JSON.")]
 JqOpt = Annotated[str | None, typer.Option("--jq", "-q", help="Filter JSON with a jq expression.")]
