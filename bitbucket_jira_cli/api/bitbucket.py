@@ -389,6 +389,23 @@ class BitbucketClient(BaseAsyncClient):
     async def get_snippet(self, workspace: str, snippet_id: str) -> dict[str, Any]:
         return await self.get_json(f"/snippets/{workspace}/{snippet_id}")
 
+    async def create_snippet(
+        self,
+        workspace: str,
+        title: str,
+        files: list[tuple[str, bytes]],
+        *,
+        is_private: bool,
+    ) -> dict[str, Any]:
+        # Snippet create is multipart/form-data: title + is_private fields plus one
+        # `file` part per file (repeated field name).
+        data = {"title": title, "is_private": "true" if is_private else "false"}
+        parts = [("file", (name, content)) for name, content in files]
+        response = await self.request(
+            "POST", f"/snippets/{workspace}", data=data, files=parts
+        )
+        return response.json()
+
     async def delete_snippet(self, workspace: str, snippet_id: str) -> None:
         await self.request("DELETE", f"/snippets/{workspace}/{snippet_id}")
 

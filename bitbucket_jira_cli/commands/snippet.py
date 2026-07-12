@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import sys
+import webbrowser
+from pathlib import Path
 from typing import Annotated
 from typing import Any
 
@@ -56,6 +59,48 @@ def list_snippets(
         visibility = "private" if snippet.get("is_private") else "public"
         title = snippet.get("title", "")
         console.print(f"[cyan]{snippet.get('id')}[/cyan] {title} [dim]{visibility}[/dim]")
+
+
+@snippet_app.command()
+def create(
+    files: Annotated[list[str], typer.Argument(help="File paths, or - to read stdin.")],
+    title: Annotated[str | None, typer.Option("--title", "-t", help="Snippet title.")] = None,
+    public: Annotated[
+        bool, typer.Option("--public", help="Make it public (default private).")
+    ] = False,
+    filename: Annotated[
+        str | None, typer.Option("--filename", "-f", help="Filename to use for stdin content.")
+    ] = None,
+    workspace: WsOpt = None,
+    web: Annotated[
+        bool, typer.Option("--web", "-w", help="Open the snippet after creating.")
+    ] = False,
+    as_json: JsonOpt = False,
+    jq: JqOpt = None,
+) -> None:
+    """Create a snippet from files or stdin (like `gh gist create`)."""
+    config = load_config()
+    ws = resolve_workspace(workspace, config.bitbucket.workspace)
+    parts: list[tuple[str, bytes]] = []
+    for path in files:
+        if path == "-":
+            parts.append((filename or "snippet.txt", sys.stdin.buffer.read()))
+        else:
+            parts.append((Path(path).name, Path(path).read_bytes()))
+    snippet_title = title or parts[0][0]
+
+    async def _run() -> dict[str, Any]:
+        async with _bb(config) as client:
+            return await client.create_snippet(ws, snippet_title, parts, is_private=not public)
+
+    created = run_with_status("Creating snippet…", _run())
+    url = created.get("links", {}).get("html", {}).get("href", "")
+    if web and url:
+        webbrowser.open(url)
+    if not emit(created, as_json=as_json, jq=jq):
+        success(f"Created snippet {created.get('id')}")
+        if url:
+            console.print(f"[dim]{url}[/dim]")
 
 
 @snippet_app.command()

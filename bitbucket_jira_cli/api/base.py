@@ -74,10 +74,19 @@ class BaseAsyncClient:
         params: dict[str, Any] | None = None,
         json: Any = None,
         content: bytes | str | None = None,
+        data: dict[str, Any] | None = None,
+        files: Any = None,
         headers: dict[str, str] | None = None,
     ) -> httpx.Response:
         response = await self._client.request(
-            method, url, params=params, json=json, content=content, headers=headers
+            method,
+            url,
+            params=params,
+            json=json,
+            content=content,
+            data=data,
+            files=files,
+            headers=headers,
         )
         if response.status_code >= httpx.codes.BAD_REQUEST:
             self._raise(response)
