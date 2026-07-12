@@ -25,6 +25,9 @@ bj issue <command> [OPTIONS]
 | [`comment`](comment.md) | Add a comment to a Jira issue. |
 | [`transition`](transition.md) | Transition an issue, choosing from the available states when none is given. |
 | [`close`](close.md) | Close a Jira issue (transition to the configured done state). |
+| [`develop`](develop.md) | Create a local git branch for an issue (its key drives branch-key automation). |
+| [`delete`](delete.md) | Delete a Jira issue (irreversible). |
+| [`status`](status.md) | Show open Jira issues assigned to you. |
 
 ## See also
 

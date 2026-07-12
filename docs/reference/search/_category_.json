@@ -1,0 +1,8 @@
+{
+  "label": "bj search",
+  "position": 9,
+  "link": {
+    "type": "doc",
+    "id": "reference/search/index"
+  }
+}

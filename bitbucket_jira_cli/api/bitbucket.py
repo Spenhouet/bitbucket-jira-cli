@@ -277,6 +277,147 @@ class BitbucketClient(BaseAsyncClient):
         )
         return response.text
 
+    # -- repository lifecycle ----------------------------------------------
+    async def create_repo(
+        self, workspace: str, repo_slug: str, body: dict[str, Any]
+    ) -> dict[str, Any]:
+        response = await self.request(
+            "POST", f"/repositories/{workspace}/{repo_slug}", json=body
+        )
+        return response.json()
+
+    async def update_repo(
+        self, workspace: str, repo_slug: str, body: dict[str, Any]
+    ) -> dict[str, Any]:
+        response = await self.request(
+            "PUT", f"/repositories/{workspace}/{repo_slug}", json=body
+        )
+        return response.json()
+
+    async def delete_repo(self, workspace: str, repo_slug: str) -> None:
+        await self.request("DELETE", f"/repositories/{workspace}/{repo_slug}")
+
+    async def fork_repo(
+        self, workspace: str, repo_slug: str, body: dict[str, Any]
+    ) -> dict[str, Any]:
+        response = await self.request(
+            "POST", f"/repositories/{workspace}/{repo_slug}/forks", json=body
+        )
+        return response.json()
+
+    # -- deploy / access keys ----------------------------------------------
+    def _key_base(self, workspace: str, repo_slug: str) -> str:
+        return f"/repositories/{workspace}/{repo_slug}/deploy-keys"
+
+    async def list_deploy_keys(
+        self, workspace: str, repo_slug: str
+    ) -> list[dict[str, Any]]:
+        return await self._paginate(self._key_base(workspace, repo_slug), params={"pagelen": 100})
+
+    async def add_deploy_key(
+        self, workspace: str, repo_slug: str, key: str, label: str
+    ) -> dict[str, Any]:
+        response = await self.request(
+            "POST", self._key_base(workspace, repo_slug), json={"key": key, "label": label}
+        )
+        return response.json()
+
+    async def delete_deploy_key(self, workspace: str, repo_slug: str, key_id: int) -> None:
+        await self.request("DELETE", f"{self._key_base(workspace, repo_slug)}/{key_id}")
+
+    # -- source (read files and directories) -------------------------------
+    async def get_source(self, workspace: str, repo_slug: str, ref: str, path: str) -> str:
+        response = await self.request(
+            "GET", f"/repositories/{workspace}/{repo_slug}/src/{quote(ref)}/{path}"
+        )
+        return response.text
+
+    async def list_source(
+        self, workspace: str, repo_slug: str, ref: str, path: str
+    ) -> list[dict[str, Any]]:
+        prefix = f"/repositories/{workspace}/{repo_slug}/src/{quote(ref)}"
+        suffix = f"/{path}" if path else "/"
+        return await self._paginate(f"{prefix}{suffix}", params={"pagelen": 100})
+
+    # -- PR build statuses (checks) ----------------------------------------
+    async def pr_statuses(
+        self, workspace: str, repo_slug: str, pr_id: int
+    ) -> list[dict[str, Any]]:
+        return await self._paginate(
+            f"{self._pr_base(workspace, repo_slug)}/{pr_id}/statuses", params={"pagelen": 100}
+        )
+
+    # -- pipeline variables (repository-level) -----------------------------
+    def _var_base(self, workspace: str, repo_slug: str) -> str:
+        return f"/repositories/{workspace}/{repo_slug}/pipelines_config/variables"
+
+    async def list_pipeline_variables(
+        self, workspace: str, repo_slug: str
+    ) -> list[dict[str, Any]]:
+        return await self._paginate(self._var_base(workspace, repo_slug), params={"pagelen": 100})
+
+    async def create_pipeline_variable(
+        self, workspace: str, repo_slug: str, key: str, value: str, *, secured: bool
+    ) -> dict[str, Any]:
+        response = await self.request(
+            "POST",
+            self._var_base(workspace, repo_slug),
+            json={"key": key, "value": value, "secured": secured},
+        )
+        return response.json()
+
+    async def delete_pipeline_variable(
+        self, workspace: str, repo_slug: str, var_uuid: str
+    ) -> None:
+        await self.request(
+            "DELETE", f"{self._var_base(workspace, repo_slug)}/{quote(var_uuid)}"
+        )
+
+    # -- branch restrictions (ruleset analog) ------------------------------
+    async def list_branch_restrictions(
+        self, workspace: str, repo_slug: str
+    ) -> list[dict[str, Any]]:
+        return await self._paginate(
+            f"/repositories/{workspace}/{repo_slug}/branch-restrictions",
+            params={"pagelen": 100},
+        )
+
+    # -- snippets (gist analog) --------------------------------------------
+    async def list_snippets(self, workspace: str, *, limit: int = 30) -> list[dict[str, Any]]:
+        return await self._paginate(f"/snippets/{workspace}", params={"pagelen": 50}, limit=limit)
+
+    async def get_snippet(self, workspace: str, snippet_id: str) -> dict[str, Any]:
+        return await self.get_json(f"/snippets/{workspace}/{snippet_id}")
+
+    async def delete_snippet(self, workspace: str, snippet_id: str) -> None:
+        await self.request("DELETE", f"/snippets/{workspace}/{snippet_id}")
+
+    # -- account SSH keys ---------------------------------------------------
+    def _ssh_base(self, selected_user: str) -> str:
+        return f"/users/{quote(selected_user)}/ssh-keys"
+
+    async def list_ssh_keys(self, selected_user: str) -> list[dict[str, Any]]:
+        return await self._paginate(self._ssh_base(selected_user), params={"pagelen": 100})
+
+    async def add_ssh_key(self, selected_user: str, key: str, label: str) -> dict[str, Any]:
+        response = await self.request(
+            "POST", self._ssh_base(selected_user), json={"key": key, "label": label}
+        )
+        return response.json()
+
+    async def delete_ssh_key(self, selected_user: str, key_uuid: str) -> None:
+        await self.request("DELETE", f"{self._ssh_base(selected_user)}/{quote(key_uuid)}")
+
+    # -- search -------------------------------------------------------------
+    async def search_code(
+        self, workspace: str, query: str, *, limit: int = 30
+    ) -> list[dict[str, Any]]:
+        return await self._paginate(
+            f"/workspaces/{workspace}/search/code",
+            params={"search_query": query, "pagelen": min(limit, 50)},
+            limit=limit,
+        )
+
     # -- generic passthrough (bj api) --------------------------------------
     async def raw(
         self, method: str, path: str, *, params: dict[str, Any] | None = None, json: Any = None

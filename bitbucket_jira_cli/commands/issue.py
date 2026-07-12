@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 from typing import Annotated
 from typing import Any
@@ -15,6 +16,7 @@ from bitbucket_jira_cli.config import Config
 from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.context import jira_client
 from bitbucket_jira_cli.errors import BranchKeyError
+from bitbucket_jira_cli.git import create_branch
 from bitbucket_jira_cli.git import current_branch
 from bitbucket_jira_cli.git import parse_branch_key
 from bitbucket_jira_cli.interaction import confirm
@@ -408,3 +410,75 @@ def close(
     else:
         msg = f"No transition to '{target}' is available for {resolved}."
         raise BranchKeyError(msg)
+
+
+def _slugify(text: str, *, limit: int = 40) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    return slug[:limit].rstrip("-")
+
+
+@issue_app.command()
+def develop(
+    key: Annotated[str | None, typer.Argument(help="Issue key (default: from branch).")] = None,
+    base: Annotated[str | None, typer.Option("--base", help="Base ref to branch from.")] = None,
+    name: Annotated[str | None, typer.Option("--name", help="Override the branch name.")] = None,
+    checkout: Annotated[
+        bool, typer.Option("--checkout/--no-checkout", help="Check out the new branch.")
+    ] = True,
+) -> None:
+    """Create a local git branch for an issue (its key drives branch-key automation)."""
+    config = load_config()
+    resolved = _resolve_key(key, config)
+
+    async def _run() -> dict[str, Any]:
+        async with jira_client(config) as client:
+            return await client.get_issue(resolved, fields=["summary"])
+
+    issue = run_with_status("Loading issue…", _run())
+    summary = issue.get("fields", {}).get("summary", "")
+    branch = name or f"{resolved}-{_slugify(summary)}".rstrip("-")
+    if not checkout:
+        console.print(branch)
+        return
+    if not create_branch(branch, base=base):
+        msg = f"Could not create branch '{branch}' (already exists, or not in a git repo)."
+        raise BranchKeyError(msg)
+    success(f"Created and checked out branch '{branch}' for {resolved}")
+
+
+@issue_app.command()
+def delete(
+    key: Annotated[str | None, typer.Argument(help="Issue key (default: from branch).")] = None,
+    yes: YesOpt = False,
+) -> None:
+    """Delete a Jira issue (irreversible)."""
+    config = load_config()
+    resolved = _resolve_key(key, config)
+    if not confirm(f"Delete {resolved}? This cannot be undone.", yes=yes):
+        raise typer.Abort
+
+    async def _run() -> None:
+        async with jira_client(config) as client:
+            await client.delete_issue(resolved)
+
+    run_with_status("Deleting…", _run())
+    success(f"Deleted {resolved}")
+
+
+@issue_app.command()
+def status(
+    limit: Annotated[int, typer.Option("--limit", "-L", help="Max results.")] = 30,
+    as_json: JsonOpt = False,
+    jq: JqOpt = None,
+) -> None:
+    """Show open Jira issues assigned to you."""
+    config = load_config()
+    jql = "assignee = currentUser() AND resolution = Unresolved ORDER BY updated DESC"
+
+    async def _run() -> list[dict[str, Any]]:
+        async with jira_client(config) as client:
+            return await client.search(jql, limit=limit)
+
+    issues = run_with_status("Loading your issues…", _run())
+    if not emit(issues, as_json=as_json, jq=jq):
+        render_issue_list(issues)

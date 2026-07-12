@@ -79,6 +79,14 @@ def checkout_branch(
     raise NotInRepoError(msg)
 
 
+def create_branch(name: str, *, base: str | None = None) -> bool:
+    """Create and check out a new local branch. Returns False on failure."""
+    args = ["checkout", "-b", name]
+    if base:
+        args.append(base)
+    return _git(*args) is not None
+
+
 def _remote_url(remote: str = "origin") -> str | None:
     return _git("remote", "get-url", remote)
 

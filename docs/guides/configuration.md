@@ -75,8 +75,15 @@ Use **"Create API token with scopes"**, app **Bitbucket**, and grant these seven
 - `read:pipeline:bitbucket` and `write:pipeline:bitbucket`
 
 For granular API-token scopes, **write does not imply read**, so tick both boxes
-for Pull Requests and Pipelines. `write:repository` is not needed (`bj` only
-reads and clones repositories).
+for Pull Requests and Pipelines. The seven scopes above cover everyday use
+(pull requests, pipelines, clone, read).
+
+Some newer commands need extra scopes that the defaults leave out, so grant them
+only if you use those commands:
+
+- `write:repository` / `admin:repository` for `bj repo create`, `edit`, `rename`,
+  `delete`, and `deploy-key` management.
+- `write:account` for `bj ssh-key add` / `delete` (managing your account keys).
 
 ### Jira: two token modes
 

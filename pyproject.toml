@@ -45,6 +45,12 @@ bj = "bitbucket_jira_cli.main:cli"
 [tool.hatch.build.targets.wheel]
 packages = ["bitbucket_jira_cli"]
 
+# Ship the agent skill inside the package so `bj skill install` can read it, while
+# the source of truth stays at skills/bitbucket-jira-cli/SKILL.md for external
+# installers (`gh skill install`, `npx skills add`).
+[tool.hatch.build.targets.wheel.force-include]
+"skills/bitbucket-jira-cli/SKILL.md" = "bitbucket_jira_cli/_skill/SKILL.md"
+
 [tool.ruff]
 # Exclude a variety of commonly ignored directories. This means Ruff will not lint or format files with these names
 exclude = [

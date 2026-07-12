@@ -33,8 +33,11 @@ SHORT_OPT_LEN = 2  # a short flag is like "-t"
 # Command grouping on the reference landing page (mirrors gh's Core/Actions/…).
 GROUPS: list[tuple[str, list[str]]] = [
     ("Core commands", ["auth", "repo", "pr", "issue"]),
-    ("Pipelines", ["pipeline"]),
-    ("Utility", ["browse", "api"]),
+    ("Jira planning", ["release", "board"]),
+    ("Pipelines", ["pipeline", "variable"]),
+    ("Search and status", ["search", "status"]),
+    ("Configuration", ["config", "alias", "ssh-key"]),
+    ("Utility", ["skill", "snippet", "ruleset", "browse", "api"]),
 ]
 
 # Extended descriptions for the commands that warrant more than the one-liner.
@@ -77,6 +80,51 @@ DESCRIPTIONS: dict[str, str] = {
     "browse": (
         "Open the repository, the current branch's pull request, or the branch's "
         "Jira issue in your browser. Use `--no-browser` to print the URL instead."
+    ),
+    "skill": (
+        "`bj` ships an [Agent Skill](https://agentskills.io/): a `SKILL.md` "
+        "playbook that teaches AI coding agents how to drive `bj`. This mirrors "
+        "`gh skill`, but installs the skill bundled with the package rather than "
+        "fetching it from a remote repository. See the "
+        "[coding agents](../../guides/agents.md) guide."
+    ),
+    "release": (
+        "Jira project versions, the analog of GitHub releases. A version is a "
+        "named milestone that issues target with their fix version and that you "
+        "eventually mark released."
+    ),
+    "variable": (
+        "Bitbucket Pipelines variables. Bitbucket models secrets and plaintext "
+        "variables as one resource with a `secured` flag, so `--secured` covers "
+        "what `gh secret` does."
+    ),
+    "config": (
+        "Read and write non-sensitive settings in `config.yml` using dotted keys "
+        "(e.g. `bitbucket.workspace`). Values are validated against the schema."
+    ),
+    "search": (
+        "Search Bitbucket repositories and code and Jira issues (JQL). Jira issue "
+        "search is also available as `bj issue list --jql`."
+    ),
+    "status": (
+        "A dashboard of what needs your attention: open Jira issues assigned to "
+        "you and open pull requests in the current repository."
+    ),
+    "alias": (
+        "User-defined command shortcuts, stored in `config.yml` and expanded "
+        "before dispatch. `bj alias set co 'pr checkout'` makes `bj co` work."
+    ),
+    "ssh-key": (
+        "Manage your Bitbucket account SSH keys. Needs a token with account "
+        "scope; the default login scopes do not include it."
+    ),
+    "skill install": (
+        "Copy the bundled agent skill into an agent's skills directory. The "
+        "target follows the same conventions as `gh skill install`: `--scope "
+        "project` (default) writes into the current repository, `--scope user` "
+        "into your home directory, and `--agent` selects the directory "
+        "(`claude-code` uses `.claude/skills`, others share `.agents/skills`). "
+        "`--print` writes the `SKILL.md` to stdout instead."
     ),
 }
 
@@ -133,7 +181,39 @@ EXAMPLES: dict[str, list[str]] = {
         "# Perform one",
         'bj issue transition PROJ-42 "In Review"',
     ],
+    "skill install": [
+        "# Install for Claude Code in the current repo",
+        "bj skill install --agent claude-code",
+        "",
+        "# Install for all agents at user scope",
+        "bj skill install --scope user",
+        "",
+        "# Print the SKILL.md instead of installing",
+        "bj skill install --print",
+    ],
     "repo clone": ["bj repo clone myteam/myrepo"],
+    "release list": [
+        "bj release list --project PROJ",
+        "bj release create 1.2.0 --project PROJ --release-date 2026-01-31",
+        "bj release release 10000",
+    ],
+    "variable set": [
+        "bj variable set DEPLOY_ENV production",
+        "bj variable set API_TOKEN s3cret --secured",
+    ],
+    "config set": [
+        "bj config get git_protocol",
+        "bj config set bitbucket.workspace myteam",
+    ],
+    "search repos": [
+        "bj search repos api --workspace myteam",
+        'bj search code "TODO" --workspace myteam',
+        "bj search issues \"project = PROJ AND status = 'In Progress'\"",
+    ],
+    "alias set": [
+        "bj alias set prs 'pr list --state open'",
+        "bj alias list",
+    ],
     "pipeline run": [
         "bj pipeline run",
         "bj pipeline run --branch main --pipeline deploy",

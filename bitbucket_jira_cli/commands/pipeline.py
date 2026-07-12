@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Annotated
 from typing import Any
 
 import typer
 
+from bitbucket_jira_cli._async import run
 from bitbucket_jira_cli.api.bitbucket import BitbucketClient
 from bitbucket_jira_cli.commands._common import emit
 from bitbucket_jira_cli.commands._common import resolve_repo
@@ -178,3 +180,61 @@ def stop(
 
     run_with_status("Stopping…", _run())
     success(f"Stopped pipeline {pipeline}")
+
+
+_TERMINAL_STATES = {"COMPLETED", "STOPPED", "ERROR", "FAILED", "SUCCESSFUL"}
+
+
+@pipeline_app.command()
+def watch(
+    pipeline: Annotated[str, typer.Argument(help="Build number or pipeline UUID.")],
+    interval: Annotated[int, typer.Option("--interval", help="Poll seconds.")] = 5,
+    repo: RepoOpt = None,
+) -> None:
+    """Follow a running pipeline until it finishes."""
+    config = load_config()
+    ref = resolve_repo(repo)
+
+    async def _run() -> dict[str, Any]:
+        async with _bb(config) as client:
+            uuid = await _resolve_uuid(client, ref, pipeline)
+            while True:
+                obj = await client.get_pipeline(ref.workspace, ref.repo_slug, uuid)
+                state = obj.get("state", {})
+                name = str(state.get("name", "")).upper()
+                result = str(state.get("result", {}).get("name", "")).upper()
+                render_pipeline(obj)
+                if name in _TERMINAL_STATES or result in _TERMINAL_STATES:
+                    return obj
+                await asyncio.sleep(interval)
+
+    final = run(_run())
+    state = final.get("state", {})
+    result = state.get("result", {}).get("name") or state.get("name")
+    success(f"Pipeline #{final.get('build_number')} finished: {result}")
+
+
+@pipeline_app.command()
+def rerun(
+    pipeline: Annotated[str, typer.Argument(help="Build number or pipeline UUID.")],
+    repo: RepoOpt = None,
+    as_json: JsonOpt = False,
+    jq: JqOpt = None,
+) -> None:
+    """Re-run a pipeline with the same target (Bitbucket has no native rerun)."""
+    config = load_config()
+    ref = resolve_repo(repo)
+
+    async def _run() -> dict[str, Any]:
+        async with _bb(config) as client:
+            uuid = await _resolve_uuid(client, ref, pipeline)
+            obj = await client.get_pipeline(ref.workspace, ref.repo_slug, uuid)
+            target = obj.get("target")
+            if not target:
+                msg = "Could not read the pipeline's target to re-run it."
+                raise BjError(msg)
+            return await client.run_pipeline(ref.workspace, ref.repo_slug, {"target": target})
+
+    result = run_with_status("Re-running…", _run())
+    if not emit(result, as_json=as_json, jq=jq):
+        success(f"Triggered pipeline #{result.get('build_number')}")

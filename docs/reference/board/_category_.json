@@ -1,0 +1,8 @@
+{
+  "label": "bj board",
+  "position": 6,
+  "link": {
+    "type": "doc",
+    "id": "reference/board/index"
+  }
+}

@@ -28,6 +28,9 @@ bj pr <command> [OPTIONS]
 | [`review`](review.md) | Approve, request changes on, or unapprove a pull request. |
 | [`comment`](comment.md) | Comment on a PR: top-level, inline (--file/--line), reply (--reply-to), or manage. |
 | [`close`](close.md) | Decline (close) a pull request. |
+| [`checks`](checks.md) | Show the build/commit statuses (CI checks) for a pull request. |
+| [`ready`](ready.md) | Mark a draft pull request as ready for review (or --undo back to draft). |
+| [`reopen`](reopen.md) | Reopen a declined pull request by opening a fresh one from the same branches. |
 | [`task`](task.md) | Manage pull-request tasks (checklist items). |
 
 ## See also
