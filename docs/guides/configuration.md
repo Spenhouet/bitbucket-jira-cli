@@ -81,9 +81,11 @@ for Pull Requests and Pipelines. The seven scopes above cover everyday use
 Some newer commands need extra scopes that the defaults leave out, so grant them
 only if you use those commands:
 
-- `write:repository` / `admin:repository` for `bj repo create`, `edit`, `rename`,
-  `delete`, and `deploy-key` management.
-- `write:account` for `bj ssh-key add` / `delete` (managing your account keys).
+- `write:repository:bitbucket` for `bj repo create`, `edit`, `rename`, `fork`.
+- `admin:repository:bitbucket` for `bj repo delete` and `bj ruleset` (branch
+  restrictions).
+- `read:ssh-key:bitbucket` and `write:ssh-key:bitbucket` for `bj ssh-key` and
+  `bj repo deploy-key` (deploy keys share the SSH-key scope).
 
 ### Jira: two token modes
 
@@ -105,3 +107,8 @@ the token itself. `write:jira-work` covers issue create/edit, comments,
 transitions and remote issue links; `read:jira-work` covers search and reads;
 `read:jira-user` covers the current-user check. Write does not imply read, so
 grant both.
+
+`bj board` uses the Jira Software agile API, which needs its own scopes: add
+`read:board-scope:jira-software` (and `read:sprint:jira-software` for
+`bj board sprints`). Without them the agile endpoints return
+"Unauthorized; scope does not match".
