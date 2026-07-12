@@ -412,7 +412,7 @@ def _reference_nav(root: Any) -> list[str]:
                 lines.append(f"          - Overview: reference/{name}/index.md")
                 lines += [f"          - {sn}: reference/{name}/{sn}.md" for sn in cmd.commands]
             else:
-                lines.append(f"      - {name}: reference/{name}.md")
+                lines.append(f"      - bj {name}: reference/{name}.md")
     return lines
 
 
