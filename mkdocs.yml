@@ -1,0 +1,213 @@
+site_name: Bitbucket Jira CLI
+site_description: >-
+  A gh-style CLI for Bitbucket pull requests, repos and pipelines, and Jira
+  issues, with branch-name-as-Jira-key automation.
+site_url: https://spenhouet.github.io/bitbucket-jira-cli/
+site_author: Sebastian Penhouet
+copyright: Copyright &copy; 2026 Sebastian Penhouet
+
+repo_url: https://github.com/Spenhouet/bitbucket-jira-cli
+repo_name: Spenhouet/bitbucket-jira-cli
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  custom_dir: overrides
+  logo: img/favicon.svg
+  favicon: img/favicon.svg
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.action.edit
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Spenhouet/bitbucket-jira-cli
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/bitbucket-jira-cli/
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Home: index.md
+  - Introduction: intro.md
+  - Getting started:
+      - Installation: installation.md
+      - Usage: usage.md
+  - Guides:
+      - Branch-key workflow: guides/branch-key.md
+      - Coding agents: guides/agents.md
+      - Configuration: guides/configuration.md
+      - Output formatting: guides/formatting.md
+      - Environment: guides/environment.md
+      - Exit codes: guides/exit-codes.md
+  # gen:reference:start (managed by scripts/gen_cli_docs.py; do not edit by hand)
+  - Command reference:
+      - Overview: reference/index.md
+      - bj auth:
+          - Overview: reference/auth/index.md
+          - login: reference/auth/login.md
+          - status: reference/auth/status.md
+          - logout: reference/auth/logout.md
+          - token: reference/auth/token.md
+          - setup-git: reference/auth/setup-git.md
+          - git-credential: reference/auth/git-credential.md
+      - bj repo:
+          - Overview: reference/repo/index.md
+          - view: reference/repo/view.md
+          - list: reference/repo/list.md
+          - clone: reference/repo/clone.md
+          - set-default: reference/repo/set-default.md
+          - create: reference/repo/create.md
+          - fork: reference/repo/fork.md
+          - delete: reference/repo/delete.md
+          - edit: reference/repo/edit.md
+          - rename: reference/repo/rename.md
+          - file: reference/repo/file.md
+          - ls: reference/repo/ls.md
+          - deploy-key: reference/repo/deploy-key.md
+      - bj pr:
+          - Overview: reference/pr/index.md
+          - create: reference/pr/create.md
+          - edit: reference/pr/edit.md
+          - list: reference/pr/list.md
+          - view: reference/pr/view.md
+          - diff: reference/pr/diff.md
+          - status: reference/pr/status.md
+          - checkout: reference/pr/checkout.md
+          - merge: reference/pr/merge.md
+          - review: reference/pr/review.md
+          - comment: reference/pr/comment.md
+          - close: reference/pr/close.md
+          - checks: reference/pr/checks.md
+          - ready: reference/pr/ready.md
+          - reopen: reference/pr/reopen.md
+          - task: reference/pr/task.md
+      - bj issue:
+          - Overview: reference/issue/index.md
+          - fields: reference/issue/fields.md
+          - list: reference/issue/list.md
+          - view: reference/issue/view.md
+          - create: reference/issue/create.md
+          - edit: reference/issue/edit.md
+          - comment: reference/issue/comment.md
+          - transition: reference/issue/transition.md
+          - close: reference/issue/close.md
+          - develop: reference/issue/develop.md
+          - delete: reference/issue/delete.md
+          - status: reference/issue/status.md
+      - bj release:
+          - Overview: reference/release/index.md
+          - list: reference/release/list.md
+          - view: reference/release/view.md
+          - create: reference/release/create.md
+          - edit: reference/release/edit.md
+          - release: reference/release/release.md
+          - unrelease: reference/release/unrelease.md
+          - delete: reference/release/delete.md
+      - bj board:
+          - Overview: reference/board/index.md
+          - list: reference/board/list.md
+          - sprints: reference/board/sprints.md
+      - bj pipeline:
+          - Overview: reference/pipeline/index.md
+          - list: reference/pipeline/list.md
+          - view: reference/pipeline/view.md
+          - logs: reference/pipeline/logs.md
+          - run: reference/pipeline/run.md
+          - stop: reference/pipeline/stop.md
+          - watch: reference/pipeline/watch.md
+          - rerun: reference/pipeline/rerun.md
+      - bj variable:
+          - Overview: reference/variable/index.md
+          - list: reference/variable/list.md
+          - set: reference/variable/set.md
+          - delete: reference/variable/delete.md
+      - bj search:
+          - Overview: reference/search/index.md
+          - repos: reference/search/repos.md
+          - code: reference/search/code.md
+          - issues: reference/search/issues.md
+      - status: reference/status.md
+      - bj config:
+          - Overview: reference/config/index.md
+          - list: reference/config/list.md
+          - get: reference/config/get.md
+          - set: reference/config/set.md
+      - bj alias:
+          - Overview: reference/alias/index.md
+          - set: reference/alias/set.md
+          - list: reference/alias/list.md
+          - delete: reference/alias/delete.md
+      - bj ssh-key:
+          - Overview: reference/ssh-key/index.md
+          - list: reference/ssh-key/list.md
+          - add: reference/ssh-key/add.md
+          - delete: reference/ssh-key/delete.md
+      - bj skill:
+          - Overview: reference/skill/index.md
+          - install: reference/skill/install.md
+      - bj snippet:
+          - Overview: reference/snippet/index.md
+          - list: reference/snippet/list.md
+          - create: reference/snippet/create.md
+          - view: reference/snippet/view.md
+          - delete: reference/snippet/delete.md
+      - bj ruleset:
+          - Overview: reference/ruleset/index.md
+          - list: reference/ruleset/list.md
+      - browse: reference/browse.md
+      - api: reference/api.md
+  # gen:reference:end
+  - Contributing: contributing.md

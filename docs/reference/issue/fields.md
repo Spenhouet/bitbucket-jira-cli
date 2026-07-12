@@ -1,6 +1,5 @@
 ---
 title: bj issue fields
-sidebar_label: fields
 ---
 
 # bj issue fields

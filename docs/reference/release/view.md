@@ -1,6 +1,5 @@
 ---
 title: bj release view
-sidebar_label: view
 ---
 
 # bj release view

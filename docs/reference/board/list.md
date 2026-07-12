@@ -1,6 +1,5 @@
 ---
 title: bj board list
-sidebar_label: list
 ---
 
 # bj board list

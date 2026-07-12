@@ -1,6 +1,5 @@
 ---
 title: bj ssh-key list
-sidebar_label: list
 ---
 
 # bj ssh-key list

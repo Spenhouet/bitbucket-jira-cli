@@ -1,6 +1,5 @@
 ---
 title: bj pr create
-sidebar_label: create
 ---
 
 # bj pr create

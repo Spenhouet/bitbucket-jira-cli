@@ -1,6 +1,5 @@
 ---
 title: bj ssh-key delete
-sidebar_label: delete
 ---
 
 # bj ssh-key delete

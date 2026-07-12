@@ -1,6 +1,5 @@
 ---
 title: bj pr task
-sidebar_label: task
 ---
 
 # bj pr task

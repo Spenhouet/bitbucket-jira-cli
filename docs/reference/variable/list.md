@@ -1,6 +1,5 @@
 ---
 title: bj variable list
-sidebar_label: list
 ---
 
 # bj variable list

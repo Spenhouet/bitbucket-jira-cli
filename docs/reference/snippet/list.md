@@ -1,6 +1,5 @@
 ---
 title: bj snippet list
-sidebar_label: list
 ---
 
 # bj snippet list

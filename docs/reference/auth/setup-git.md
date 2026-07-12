@@ -1,6 +1,5 @@
 ---
 title: bj auth setup-git
-sidebar_label: setup-git
 ---
 
 # bj auth setup-git

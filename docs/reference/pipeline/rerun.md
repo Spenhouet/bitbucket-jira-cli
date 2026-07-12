@@ -1,6 +1,5 @@
 ---
 title: bj pipeline rerun
-sidebar_label: rerun
 ---
 
 # bj pipeline rerun

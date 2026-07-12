@@ -1,6 +1,5 @@
 ---
 title: bj alias list
-sidebar_label: list
 ---
 
 # bj alias list

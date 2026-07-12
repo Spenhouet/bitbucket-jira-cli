@@ -1,6 +1,5 @@
 ---
 title: bj issue develop
-sidebar_label: develop
 ---
 
 # bj issue develop

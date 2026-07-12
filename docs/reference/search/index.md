@@ -1,6 +1,5 @@
 ---
 title: bj search
-sidebar_label: search
 ---
 
 # bj search

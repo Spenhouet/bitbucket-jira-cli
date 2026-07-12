@@ -1,6 +1,5 @@
 ---
 title: bj auth git-credential
-sidebar_label: git-credential
 ---
 
 # bj auth git-credential

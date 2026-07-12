@@ -1,6 +1,5 @@
 ---
 title: bj api
-sidebar_label: api
 ---
 
 # bj api

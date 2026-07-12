@@ -1,6 +1,5 @@
 ---
 title: bj alias delete
-sidebar_label: delete
 ---
 
 # bj alias delete

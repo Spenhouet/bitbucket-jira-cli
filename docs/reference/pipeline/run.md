@@ -1,6 +1,5 @@
 ---
 title: bj pipeline run
-sidebar_label: run
 ---
 
 # bj pipeline run

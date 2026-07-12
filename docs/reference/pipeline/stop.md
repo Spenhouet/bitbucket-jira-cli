@@ -1,6 +1,5 @@
 ---
 title: bj pipeline stop
-sidebar_label: stop
 ---
 
 # bj pipeline stop

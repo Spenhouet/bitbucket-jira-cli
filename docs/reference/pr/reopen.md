@@ -1,6 +1,5 @@
 ---
 title: bj pr reopen
-sidebar_label: reopen
 ---
 
 # bj pr reopen

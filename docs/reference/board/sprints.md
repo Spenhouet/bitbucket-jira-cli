@@ -1,6 +1,5 @@
 ---
 title: bj board sprints
-sidebar_label: sprints
 ---
 
 # bj board sprints

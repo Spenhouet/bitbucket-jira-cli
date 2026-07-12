@@ -1,6 +1,5 @@
 ---
 title: bj repo fork
-sidebar_label: fork
 ---
 
 # bj repo fork

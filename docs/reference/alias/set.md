@@ -1,6 +1,5 @@
 ---
 title: bj alias set
-sidebar_label: set
 ---
 
 # bj alias set

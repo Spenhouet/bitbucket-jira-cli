@@ -27,8 +27,8 @@ jobs:
       - name: Check generated command reference is up to date
         run: |
           uv run python scripts/gen_cli_docs.py
-          git diff --exit-code docs/reference \
-            || { echo "::error::docs/reference is stale — run 'uv run python scripts/gen_cli_docs.py' and commit."; exit 1; }
+          git diff --exit-code docs/reference mkdocs.yml \
+            || { echo "::error::docs/reference or the mkdocs.yml nav is stale — run 'uv run python scripts/gen_cli_docs.py' and commit."; exit 1; }
 
       - name: Run tests with pytest
         run: uv run pytest

@@ -1,6 +1,5 @@
 ---
 title: bj ruleset list
-sidebar_label: list
 ---
 
 # bj ruleset list

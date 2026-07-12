@@ -1,6 +1,5 @@
 ---
 title: bj pr comment
-sidebar_label: comment
 ---
 
 # bj pr comment

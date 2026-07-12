@@ -1,6 +1,5 @@
 ---
 title: bj pr list
-sidebar_label: list
 ---
 
 # bj pr list

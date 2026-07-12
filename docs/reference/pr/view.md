@@ -1,6 +1,5 @@
 ---
 title: bj pr view
-sidebar_label: view
 ---
 
 # bj pr view

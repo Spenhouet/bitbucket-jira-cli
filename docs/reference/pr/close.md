@@ -1,6 +1,5 @@
 ---
 title: bj pr close
-sidebar_label: close
 ---
 
 # bj pr close

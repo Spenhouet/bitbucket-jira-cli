@@ -1,6 +1,5 @@
 ---
 title: bj config get
-sidebar_label: get
 ---
 
 # bj config get

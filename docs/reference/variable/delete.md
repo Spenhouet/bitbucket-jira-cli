@@ -1,6 +1,5 @@
 ---
 title: bj variable delete
-sidebar_label: delete
 ---
 
 # bj variable delete

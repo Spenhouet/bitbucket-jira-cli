@@ -1,6 +1,5 @@
 ---
 title: bj search issues
-sidebar_label: issues
 ---
 
 # bj search issues

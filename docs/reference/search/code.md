@@ -1,6 +1,5 @@
 ---
 title: bj search code
-sidebar_label: code
 ---
 
 # bj search code

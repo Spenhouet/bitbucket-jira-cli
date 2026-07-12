@@ -1,6 +1,5 @@
 ---
 title: bj repo view
-sidebar_label: view
 ---
 
 # bj repo view

@@ -1,6 +1,5 @@
 ---
 title: bj issue delete
-sidebar_label: delete
 ---
 
 # bj issue delete

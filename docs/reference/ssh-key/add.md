@@ -1,6 +1,5 @@
 ---
 title: bj ssh-key add
-sidebar_label: add
 ---
 
 # bj ssh-key add

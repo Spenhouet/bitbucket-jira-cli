@@ -1,5 +1,4 @@
 ---
-sidebar_position: 2
 title: Coding agents
 description: Use bj with AI coding agents like Claude Code, Copilot, Cursor, Codex, and Gemini CLI. Install the bundled agent skill with bj skill install.
 ---

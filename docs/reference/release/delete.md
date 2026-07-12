@@ -1,6 +1,5 @@
 ---
 title: bj release delete
-sidebar_label: delete
 ---
 
 # bj release delete

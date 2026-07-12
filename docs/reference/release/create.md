@@ -1,6 +1,5 @@
 ---
 title: bj release create
-sidebar_label: create
 ---
 
 # bj release create

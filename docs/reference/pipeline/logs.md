@@ -1,6 +1,5 @@
 ---
 title: bj pipeline logs
-sidebar_label: logs
 ---
 
 # bj pipeline logs

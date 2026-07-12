@@ -1,6 +1,5 @@
 ---
 title: bj pr status
-sidebar_label: status
 ---
 
 # bj pr status

@@ -1,6 +1,5 @@
 ---
 title: bj pr checkout
-sidebar_label: checkout
 ---
 
 # bj pr checkout

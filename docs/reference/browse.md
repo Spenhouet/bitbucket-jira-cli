@@ -1,6 +1,5 @@
 ---
 title: bj browse
-sidebar_label: browse
 ---
 
 # bj browse

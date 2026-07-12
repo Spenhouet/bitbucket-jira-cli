@@ -1,6 +1,5 @@
 ---
 title: bj pr checks
-sidebar_label: checks
 ---
 
 # bj pr checks

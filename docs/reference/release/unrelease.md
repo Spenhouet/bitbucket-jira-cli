@@ -1,6 +1,5 @@
 ---
 title: bj release unrelease
-sidebar_label: unrelease
 ---
 
 # bj release unrelease
