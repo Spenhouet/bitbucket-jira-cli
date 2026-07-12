@@ -5,7 +5,7 @@ sidebar_label: board
 
 # bj board
 
-Work with Jira boards and sprints.
+Work with Jira boards and sprints (needs an unscoped Jira token).
 
 ## Synopsis
 
@@ -15,7 +15,7 @@ bj board <command> [OPTIONS]
 
 ## Description
 
-Jira Software boards and sprints, the closest analog to GitHub Projects. This uses the Jira agile API. A scoped token needs the extra scopes `read:board-scope:jira-software`, `read:sprint:jira-software`, and `read:project:jira` (an unscoped token has them implicitly).
+Jira Software boards and sprints, the closest analog to GitHub Projects. This uses the Jira agile API, which Atlassian does not allow scoped API tokens to call, so `bj board` needs an **unscoped** Jira token (`jira.auth_mode: site`), not a scoped/gateway one.
 
 ## Commands
 
