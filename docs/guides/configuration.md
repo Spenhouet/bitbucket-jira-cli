@@ -66,26 +66,32 @@ Both tokens are created at
 
 ### Bitbucket scoped API token
 
-Use **"Create API token with scopes"**, app **Bitbucket**, and grant these seven:
+Use **"Create API token with scopes"**, app **Bitbucket**. For full command
+coverage, grant all of these (Bitbucket's granular scopes do not imply each
+other, so tick every box you want):
 
-- `read:user:bitbucket`: required for the current-user check `bj auth login` runs
+- `read:user:bitbucket`: the current-user check `bj auth login` runs
 - `read:workspace:bitbucket`: list workspace members (reviewer selection)
-- `read:repository:bitbucket`: view/list repos, read clone URLs, clone
-- `read:pullrequest:bitbucket` and `write:pullrequest:bitbucket`
-- `read:pipeline:bitbucket` and `write:pipeline:bitbucket`
+- `read:repository:bitbucket`, `write:repository:bitbucket`,
+  `admin:repository:bitbucket`, `delete:repository:bitbucket`
+- `read:pullrequest:bitbucket`, `write:pullrequest:bitbucket`
+- `read:pipeline:bitbucket`, `write:pipeline:bitbucket`, `admin:pipeline:bitbucket`
+- `read:ssh-key:bitbucket`, `write:ssh-key:bitbucket`, `delete:ssh-key:bitbucket`
 
-For granular API-token scopes, **write does not imply read**, so tick both boxes
-for Pull Requests and Pipelines. The seven scopes above cover everyday use
-(pull requests, pipelines, clone, read).
+Which scope each command family needs:
 
-Some newer commands need extra scopes that the defaults leave out, so grant them
-only if you use those commands:
+| Commands | Scope |
+| --- | --- |
+| everyday reads, PRs, clone | `read:*`, `read/write:pullrequest`, `read:repository` |
+| `repo create` / `edit` / `rename` / `fork` | `write:repository:bitbucket` |
+| `ruleset list` (branch restrictions) | `admin:repository:bitbucket` |
+| `repo delete` | `delete:repository:bitbucket` |
+| `variable` (pipeline variables) | `admin:pipeline:bitbucket` |
+| `ssh-key add` / `repo deploy-key add` | `write:ssh-key:bitbucket` |
+| `ssh-key delete` / `deploy-key delete` | `delete:ssh-key:bitbucket` |
 
-- `write:repository:bitbucket` for `bj repo create`, `edit`, `rename`, `fork`.
-- `admin:repository:bitbucket` for `bj repo delete` and `bj ruleset` (branch
-  restrictions).
-- `read:ssh-key:bitbucket` and `write:ssh-key:bitbucket` for `bj ssh-key` and
-  `bj repo deploy-key` (deploy keys share the SSH-key scope).
+The `delete:*` and `admin:*` scopes are separate on purpose: a token with only
+`write:repository:bitbucket` can create and edit repos but not delete them.
 
 ### Jira: two token modes
 
@@ -96,19 +102,19 @@ only if you use those commands:
   `*.atlassian.net` site host, like the `jira` and `go-jira` CLIs. This becomes
   `jira.auth_mode: site` in `config.yml`.
 - **Scoped (least privilege)**: **"Create API token with scopes"**, app
-  **Jira**, scopes `read:jira-work`, `write:jira-work`, `read:jira-user`. Scoped
-  Jira tokens are only accepted on Atlassian's `api.atlassian.com/ex/jira/{cloudId}`
-  gateway (they 401 against the site host), so `bj` resolves your site's cloudId
-  from `{site}/_edge/tenant_info` at login, stores it as `jira.cloud_id`, and
-  targets the gateway. This becomes `jira.auth_mode: gateway`.
+  **Jira**, scopes `read:jira-work`, `write:jira-work`, `read:jira-user`, and
+  `manage:jira-project`. Scoped Jira tokens are only accepted on Atlassian's
+  `api.atlassian.com/ex/jira/{cloudId}` gateway (they 401 against the site host),
+  so `bj` resolves your site's cloudId from `{site}/_edge/tenant_info` at login,
+  stores it as `jira.cloud_id`, and targets the gateway. This becomes
+  `jira.auth_mode: gateway`.
 
-Both use the same three scopes' worth of access; the scoped token just limits
-the token itself. `write:jira-work` covers issue create/edit, comments,
-transitions and remote issue links; `read:jira-work` covers search and reads;
-`read:jira-user` covers the current-user check. Write does not imply read, so
-grant both.
+`write:jira-work` covers issue create/edit, comments, transitions and remote
+issue links; `read:jira-work` covers search and reads; `read:jira-user` covers
+the current-user check; `manage:jira-project` covers `bj release` (creating,
+editing, and deleting Jira versions). Write does not imply read, so grant both.
 
-`bj board` uses the Jira Software agile API, which needs its own scopes: add
-`read:board-scope:jira-software` (and `read:sprint:jira-software` for
-`bj board sprints`). Without them the agile endpoints return
-"Unauthorized; scope does not match".
+`bj board` uses the Jira Software agile API. Atlassian only exposes the agile
+scopes to OAuth/Forge apps, not to scoped API tokens, so `bj board` works only
+with an **unscoped** Jira token (`jira.auth_mode: site`). With a scoped
+(gateway) token the agile endpoints return "Unauthorized; scope does not match".
