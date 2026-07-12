@@ -90,9 +90,9 @@ DESCRIPTIONS: dict[str, str] = {
     ),
     "board": (
         "Jira Software boards and sprints, the closest analog to GitHub Projects. "
-        "This uses the Jira agile API. A scoped token needs the extra scopes "
-        "`read:board-scope:jira-software`, `read:sprint:jira-software`, and "
-        "`read:project:jira` (an unscoped token has them implicitly)."
+        "This uses the Jira agile API, which Atlassian does not allow scoped API "
+        "tokens to call, so `bj board` needs an **unscoped** Jira token "
+        "(`jira.auth_mode: site`), not a scoped/gateway one."
     ),
     "release": (
         "Jira project versions, the analog of GitHub releases. A version is a "
