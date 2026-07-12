@@ -88,6 +88,12 @@ DESCRIPTIONS: dict[str, str] = {
         "fetching it from a remote repository. See the "
         "[coding agents](../../guides/agents.md) guide."
     ),
+    "board": (
+        "Jira Software boards and sprints, the closest analog to GitHub Projects. "
+        "This uses the Jira agile API, whose scopes Atlassian only grants to "
+        "OAuth/Forge apps, so `bj board` works with an **unscoped** Jira token "
+        "(`jira.auth_mode: site`), not a scoped/gateway one."
+    ),
     "release": (
         "Jira project versions, the analog of GitHub releases. A version is a "
         "named milestone that issues target with their fix version and that you "

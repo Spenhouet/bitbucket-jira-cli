@@ -60,11 +60,15 @@ ATLASSIAN_ID_URL = "https://id.atlassian.com/manage-profile/security/api-tokens"
 def _guide_bitbucket() -> None:
     console.print("[bold]Bitbucket Cloud[/bold]")
     console.print(
-        f"[dim]Basic mode: create a scoped API token (app: Bitbucket):\n"
+        f"[dim]Basic mode: create a scoped API token (app: Bitbucket) at\n"
         f"  {ATLASSIAN_ID_URL}\n"
-        f"  scopes: read:user:bitbucket, read:workspace:bitbucket, read:repository:bitbucket,\n"
-        f"          read:pullrequest:bitbucket, write:pullrequest:bitbucket,\n"
-        f"          read:pipeline:bitbucket, write:pipeline:bitbucket\n"
+        f"  with all of these scopes:\n"
+        f"    read:user:bitbucket, read:workspace:bitbucket,\n"
+        f"    read:repository:bitbucket, write:repository:bitbucket,\n"
+        f"    admin:repository:bitbucket, delete:repository:bitbucket,\n"
+        f"    read:pullrequest:bitbucket, write:pullrequest:bitbucket,\n"
+        f"    read:pipeline:bitbucket, write:pipeline:bitbucket, admin:pipeline:bitbucket,\n"
+        f"    read:ssh-key:bitbucket, write:ssh-key:bitbucket, delete:ssh-key:bitbucket\n"
         f"Bearer mode: paste a repository/workspace access token from repo settings.[/dim]",
         highlight=False,
     )
@@ -76,8 +80,11 @@ def _guide_jira() -> None:
         f"[dim]Create an API token at {ATLASSIAN_ID_URL}\n"
         f"  • Unscoped (simplest): the plain 'Create API token' button, no scopes.\n"
         f"  • Scoped (least privilege): 'Create API token with scopes', app: Jira,\n"
-        f"    scopes read:jira-work, write:jira-work, read:jira-user. bj addresses it\n"
-        f"    through the api.atlassian.com gateway (cloudId resolved automatically).\n"
+        f"    with all of these scopes:\n"
+        f"      read:jira-work, write:jira-work, read:jira-user, manage:jira-project\n"
+        f"    bj addresses it through the api.atlassian.com gateway (cloudId resolved\n"
+        f"    automatically). Note: `bj board` needs the unscoped token below, since\n"
+        f"    Atlassian does not offer Jira Software (agile) scopes to API tokens.\n"
         f"  Pick the matching method at the next prompt.[/dim]",
         highlight=False,
     )
