@@ -25,6 +25,8 @@ RUN --mount=type=cache,target=/root/.cache/uv,id=uv-$TARGETARCH \
 # Install the project itself into the venv. Invalidates on source edits.
 COPY pyproject.toml uv.lock README.md ./
 COPY bitbucket_jira_cli ./bitbucket_jira_cli
+# The bundled agent skill is force-included into the wheel (see pyproject.toml).
+COPY skills ./skills
 RUN --mount=type=cache,target=/root/.cache/uv,id=uv-$TARGETARCH \
     uv sync --locked --no-editable --no-dev
 
