@@ -1,6 +1,5 @@
 ---
 title: bj pipeline watch
-sidebar_label: watch
 ---
 
 # bj pipeline watch

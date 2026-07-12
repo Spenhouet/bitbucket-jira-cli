@@ -1,6 +1,5 @@
 ---
 title: bj auth logout
-sidebar_label: logout
 ---
 
 # bj auth logout

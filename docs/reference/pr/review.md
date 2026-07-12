@@ -1,6 +1,5 @@
 ---
 title: bj pr review
-sidebar_label: review
 ---
 
 # bj pr review

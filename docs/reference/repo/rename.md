@@ -1,6 +1,5 @@
 ---
 title: bj repo rename
-sidebar_label: rename
 ---
 
 # bj repo rename

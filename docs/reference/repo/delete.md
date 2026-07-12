@@ -1,6 +1,5 @@
 ---
 title: bj repo delete
-sidebar_label: delete
 ---
 
 # bj repo delete

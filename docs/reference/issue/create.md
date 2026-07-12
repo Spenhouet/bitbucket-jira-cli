@@ -1,6 +1,5 @@
 ---
 title: bj issue create
-sidebar_label: create
 ---
 
 # bj issue create

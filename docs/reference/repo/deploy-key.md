@@ -1,6 +1,5 @@
 ---
 title: bj repo deploy-key
-sidebar_label: deploy-key
 ---
 
 # bj repo deploy-key

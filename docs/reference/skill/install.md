@@ -1,6 +1,5 @@
 ---
 title: bj skill install
-sidebar_label: install
 ---
 
 # bj skill install

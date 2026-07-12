@@ -1,6 +1,5 @@
 ---
 title: bj repo create
-sidebar_label: create
 ---
 
 # bj repo create

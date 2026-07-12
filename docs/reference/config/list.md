@@ -1,6 +1,5 @@
 ---
 title: bj config list
-sidebar_label: list
 ---
 
 # bj config list

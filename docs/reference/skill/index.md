@@ -1,6 +1,5 @@
 ---
 title: bj skill
-sidebar_label: skill
 ---
 
 # bj skill

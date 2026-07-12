@@ -1,6 +1,5 @@
 ---
 title: bj snippet create
-sidebar_label: create
 ---
 
 # bj snippet create

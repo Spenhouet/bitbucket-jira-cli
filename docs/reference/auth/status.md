@@ -1,6 +1,5 @@
 ---
 title: bj auth status
-sidebar_label: status
 ---
 
 # bj auth status

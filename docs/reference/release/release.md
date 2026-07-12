@@ -1,6 +1,5 @@
 ---
 title: bj release release
-sidebar_label: release
 ---
 
 # bj release release

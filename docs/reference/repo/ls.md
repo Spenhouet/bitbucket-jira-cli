@@ -1,6 +1,5 @@
 ---
 title: bj repo ls
-sidebar_label: ls
 ---
 
 # bj repo ls

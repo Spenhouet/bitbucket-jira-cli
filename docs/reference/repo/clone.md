@@ -1,6 +1,5 @@
 ---
 title: bj repo clone
-sidebar_label: clone
 ---
 
 # bj repo clone

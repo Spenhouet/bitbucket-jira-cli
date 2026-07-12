@@ -1,6 +1,5 @@
 ---
 title: bj issue status
-sidebar_label: status
 ---
 
 # bj issue status

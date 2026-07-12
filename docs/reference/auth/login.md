@@ -1,6 +1,5 @@
 ---
 title: bj auth login
-sidebar_label: login
 ---
 
 # bj auth login

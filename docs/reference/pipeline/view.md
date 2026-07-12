@@ -1,6 +1,5 @@
 ---
 title: bj pipeline view
-sidebar_label: view
 ---
 
 # bj pipeline view

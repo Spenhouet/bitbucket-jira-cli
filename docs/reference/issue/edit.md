@@ -1,6 +1,5 @@
 ---
 title: bj issue edit
-sidebar_label: edit
 ---
 
 # bj issue edit

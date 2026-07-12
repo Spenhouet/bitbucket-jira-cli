@@ -1,6 +1,5 @@
 ---
 title: bj repo file
-sidebar_label: file
 ---
 
 # bj repo file

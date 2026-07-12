@@ -1,0 +1,25 @@
+/* Brand touches on top of the Material theme. */
+
+/* Center the hero banner on the landing page. */
+.bj-hero {
+  text-align: center;
+  margin: 1.5rem 0 2rem;
+}
+
+.bj-hero img {
+  max-width: 640px;
+  width: 100%;
+  height: auto;
+}
+
+.bj-hero .bj-tagline {
+  font-size: 1.1rem;
+  color: var(--md-default-fg-color--light);
+  max-width: 40rem;
+  margin: 1rem auto 1.5rem;
+}
+
+/* Slightly lift the grid cards on hover. */
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--md-accent-fg-color);
+}

@@ -1,6 +1,5 @@
 ---
 title: bj issue transition
-sidebar_label: transition
 ---
 
 # bj issue transition

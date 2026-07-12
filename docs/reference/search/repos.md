@@ -1,6 +1,5 @@
 ---
 title: bj search repos
-sidebar_label: repos
 ---
 
 # bj search repos

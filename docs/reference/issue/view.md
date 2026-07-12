@@ -1,6 +1,5 @@
 ---
 title: bj issue view
-sidebar_label: view
 ---
 
 # bj issue view

@@ -1,8 +1,0 @@
-{
-  "label": "bj ssh-key",
-  "position": 12,
-  "link": {
-    "type": "doc",
-    "id": "reference/ssh-key/index"
-  }
-}

@@ -1,6 +1,5 @@
 ---
 title: bj repo edit
-sidebar_label: edit
 ---
 
 # bj repo edit

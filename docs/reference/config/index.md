@@ -1,6 +1,5 @@
 ---
 title: bj config
-sidebar_label: config
 ---
 
 # bj config

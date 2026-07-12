@@ -1,6 +1,5 @@
 ---
 title: bj status
-sidebar_label: status
 ---
 
 # bj status

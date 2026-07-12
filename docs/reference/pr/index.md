@@ -1,6 +1,5 @@
 ---
 title: bj pr
-sidebar_label: pr
 ---
 
 # bj pr

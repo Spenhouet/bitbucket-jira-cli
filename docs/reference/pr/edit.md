@@ -1,6 +1,5 @@
 ---
 title: bj pr edit
-sidebar_label: edit
 ---
 
 # bj pr edit

@@ -1,6 +1,5 @@
 ---
 title: bj repo set-default
-sidebar_label: set-default
 ---
 
 # bj repo set-default

@@ -1,6 +1,5 @@
 ---
 title: bj board
-sidebar_label: board
 ---
 
 # bj board

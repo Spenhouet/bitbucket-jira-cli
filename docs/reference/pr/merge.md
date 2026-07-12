@@ -1,6 +1,5 @@
 ---
 title: bj pr merge
-sidebar_label: merge
 ---
 
 # bj pr merge

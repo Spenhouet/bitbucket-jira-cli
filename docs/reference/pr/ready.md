@@ -1,6 +1,5 @@
 ---
 title: bj pr ready
-sidebar_label: ready
 ---
 
 # bj pr ready

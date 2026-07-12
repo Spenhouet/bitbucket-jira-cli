@@ -1,6 +1,5 @@
 ---
 title: bj snippet delete
-sidebar_label: delete
 ---
 
 # bj snippet delete

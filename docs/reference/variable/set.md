@@ -1,6 +1,5 @@
 ---
 title: bj variable set
-sidebar_label: set
 ---
 
 # bj variable set

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Generate the Docusaurus command reference from the live Typer command tree.
+"""Generate the MkDocs command reference from the live Typer command tree.
 
 Mirrors how `gh`'s manual is generated from its Cobra tree: one page per command
 and per subcommand, each with the same skeleton (title, one-line description,
@@ -7,9 +7,10 @@ synopsis, description, arguments, options, examples, see also). Run:
 
     uv run python scripts/gen_cli_docs.py
 
-Output goes to docs/reference/ (wiped and regenerated each run). Pages are
-CommonMark (.md) so API notation like {workspace} and <key> is literal; the
-site is configured with `markdown.format: "detect"`.
+Output goes to docs/reference/ (wiped and regenerated each run). Pages are plain
+Markdown, so API notation like {workspace} and <key> is literal. The reference
+section of the mkdocs.yml nav is regenerated between marker comments so the tree
+stays in sync with the CLI.
 
 Typer vendors click, so the command objects are duck-typed (they expose the
 usual click attributes: .commands, .params, .param_type_name, .opts, …).
@@ -17,7 +18,6 @@ usual click attributes: .commands, .params, .param_type_name, .opts, …).
 
 from __future__ import annotations
 
-import json
 import shutil
 from pathlib import Path
 from typing import Any
@@ -28,6 +28,9 @@ from bitbucket_jira_cli.main import app
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 OUT_DIR = REPO_ROOT / "docs" / "reference"
+MKDOCS_FILE = REPO_ROOT / "mkdocs.yml"
+NAV_START = "  # gen:reference:start"
+NAV_END = "  # gen:reference:end"
 SHORT_OPT_LEN = 2  # a short flag is like "-t"
 
 # Command grouping on the reference landing page (mirrors gh's Core/Actions/…).
@@ -327,7 +330,6 @@ def _page(path: list[str], cmd: Any, *, is_group: bool,
     out = [
         "---",
         f"title: {label}",
-        f"sidebar_label: {path[-1] if path else 'bj'}",
         "---",
         "",
         f"# {label}",
@@ -365,8 +367,6 @@ def _render_root(root: Any) -> str:
     out = [
         "---",
         "title: bj",
-        "sidebar_label: Overview",
-        "sidebar_position: 0",  # lead the Command reference section, not trail it
         "---",
         "",
         "# bj",
@@ -396,12 +396,32 @@ def _render_root(root: Any) -> str:
     return "\n".join(out)
 
 
-def _category(label: str, position: int, index_id: str) -> str:
-    return json.dumps(
-        {"label": label, "position": position,
-         "link": {"type": "doc", "id": index_id}},
-        indent=2,
-    )
+def _reference_nav(root: Any) -> list[str]:
+    """Build the mkdocs.yml nav lines for the whole command reference.
+
+    Indentation matches the two-space nav in mkdocs.yml: the "Command reference"
+    item sits at the nav top level (2 spaces), its entries at 6, and each group's
+    subcommands at 10.
+    """
+    lines = ["  - Command reference:", "      - Overview: reference/index.md"]
+    for _, names in GROUPS:
+        for name in names:
+            cmd = root.commands[name]
+            if _is_group(cmd):
+                lines.append(f"      - bj {name}:")
+                lines.append(f"          - Overview: reference/{name}/index.md")
+                lines += [f"          - {sn}: reference/{name}/{sn}.md" for sn in cmd.commands]
+            else:
+                lines.append(f"      - {name}: reference/{name}.md")
+    return lines
+
+
+def _inject_nav(nav_lines: list[str]) -> None:
+    lines = MKDOCS_FILE.read_text(encoding="utf-8").splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith(NAV_START))
+    end = next(i for i, line in enumerate(lines) if line.startswith(NAV_END))
+    updated = lines[: start + 1] + nav_lines + lines[end:]
+    MKDOCS_FILE.write_text("\n".join(updated) + "\n", encoding="utf-8")
 
 
 def _write(rel_path: str, content: str) -> None:
@@ -416,26 +436,19 @@ def main() -> None:
     OUT_DIR.mkdir(parents=True)
 
     root = typer.main.get_command(app)
-    (OUT_DIR / "_category_.json").write_text(
-        _category("Command reference", 5, "reference/index"), encoding="utf-8"
-    )
     _write("index.md", _render_root(root))
 
-    group_pos = 0
     for name in [n for _, names in GROUPS for n in names]:
         cmd = root.commands[name]
         if _is_group(cmd):
-            group_pos += 1
             children = [(sn, _one_liner(sc)) for sn, sc in cmd.commands.items()]
             _write(f"{name}/index.md", _page([name], cmd, is_group=True, children=children))
-            (OUT_DIR / name / "_category_.json").write_text(
-                _category(f"bj {name}", group_pos, f"reference/{name}/index"),
-                encoding="utf-8",
-            )
             for sn, sc in cmd.commands.items():
                 _write(f"{name}/{sn}.md", _page([name, sn], sc, is_group=False))
         else:
             _write(f"{name}.md", _page([name], cmd, is_group=False))
+
+    _inject_nav(_reference_nav(root))
 
     count = sum(1 for _ in OUT_DIR.rglob("*.md"))
     typer.echo(f"Generated {count} reference pages under {OUT_DIR.relative_to(REPO_ROOT)}")

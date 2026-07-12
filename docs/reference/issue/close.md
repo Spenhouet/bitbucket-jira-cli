@@ -1,6 +1,5 @@
 ---
 title: bj issue close
-sidebar_label: close
 ---
 
 # bj issue close

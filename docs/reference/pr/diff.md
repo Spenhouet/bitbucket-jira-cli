@@ -1,6 +1,5 @@
 ---
 title: bj pr diff
-sidebar_label: diff
 ---
 
 # bj pr diff

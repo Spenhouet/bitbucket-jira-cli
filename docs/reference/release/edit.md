@@ -1,6 +1,5 @@
 ---
 title: bj release edit
-sidebar_label: edit
 ---
 
 # bj release edit

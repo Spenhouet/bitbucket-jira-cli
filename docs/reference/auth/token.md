@@ -1,6 +1,5 @@
 ---
 title: bj auth token
-sidebar_label: token
 ---
 
 # bj auth token

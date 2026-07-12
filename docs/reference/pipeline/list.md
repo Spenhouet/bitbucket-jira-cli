@@ -1,6 +1,5 @@
 ---
 title: bj pipeline list
-sidebar_label: list
 ---
 
 # bj pipeline list
