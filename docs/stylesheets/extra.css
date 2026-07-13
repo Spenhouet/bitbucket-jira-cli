@@ -25,6 +25,15 @@
   margin: 1rem auto 1.5rem;
 }
 
+/* Homepage demo GIF. */
+.bj-demo img {
+  max-width: 820px;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  border: 1px solid var(--md-default-fg-color--lightest);
+}
+
 /* Slightly lift the grid cards on hover. */
 .md-typeset .grid.cards > ul > li:hover {
   border-color: var(--md-accent-fg-color);
