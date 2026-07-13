@@ -53,6 +53,22 @@ npx skills add Spenhouet/bitbucket-jira-cli
 The `SKILL.md` format is the open [Agent Skills](https://agentskills.io/)
 standard, shared by Claude Code, Copilot, Cursor, Codex, Gemini CLI, and others.
 
+### Install as a Claude Code plugin
+
+The skill is also published as an installable Claude Code plugin, so you can add
+it without copying files. The repository doubles as a plugin marketplace:
+
+```bash
+/plugin marketplace add Spenhouet/bitbucket-jira-cli
+/plugin install bitbucket-jira-cli@spenhouet
+```
+
+The first command registers the marketplace; the second installs the bundled
+skill and keeps it managed by Claude Code, so updates arrive through `/plugin`
+rather than a re-copy. Use this when you want Claude Code to own the skill's
+lifecycle; use `bj skill install` when you want a plain copy in a specific
+repository or agent directory.
+
 ## Always-on rules
 
 A skill loads only when relevant. To keep `bj` in an agent's context all the
