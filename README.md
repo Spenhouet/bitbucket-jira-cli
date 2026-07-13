@@ -18,6 +18,10 @@
    </a>
 </p>
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Spenhouet/bitbucket-jira-cli/main/docs/img/demo.gif" alt="bj demo: create a Jira issue, open a branch for it, and open a linked pull request" style="border-radius: 8px; max-width: 100%;">
+</p>
+
 ## What it does
 
 `bj` brings [GitHub `gh`](https://cli.github.com/) ergonomics to Bitbucket and

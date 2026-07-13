@@ -19,6 +19,10 @@ hide:
 
 </div>
 
+<figure markdown="span">
+  ![bj in action: create a Jira issue, open a branch, open a linked PR](img/demo.gif){ .bj-demo }
+</figure>
+
 ## What it does
 
 <div class="grid cards" markdown>
