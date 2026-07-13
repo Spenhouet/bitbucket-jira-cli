@@ -1,6 +1,6 @@
 ---
 name: bitbucket-jira-cli
-description: Manage Bitbucket pull requests, repositories, and pipelines and Jira issues from the terminal with the bj CLI. bj mirrors the GitHub gh CLI, so gh pr/issue/repo commands map to bj pr/issue/repo. Use when working with Bitbucket or Jira, opening or reviewing pull requests, managing Jira issues, running pipelines, or when a git branch name contains a Jira issue key like PROJ-42.
+description: Manage Bitbucket pull requests, repositories, and pipelines and Jira issues from the terminal with the bj CLI. bj mirrors the GitHub gh CLI, so gh pr/issue/repo commands map to bj pr/issue/repo, no MCP server or API wiring needed. Installs the bj CLI automatically if it is missing. Use when working with Bitbucket or Jira, opening or reviewing pull requests, managing Jira issues, running pipelines, or when a git branch name contains a Jira issue key like PROJ-42.
 ---
 
 # bitbucket-jira-cli (`bj`)
@@ -11,6 +11,43 @@ and pipelines, plus Jira issues, from one noun-first command tree.
 
 If a command or flag is not covered here, run `bj <command> --help`; the flags
 mirror `gh` and the help is authoritative.
+
+## Install `bj` if it is missing
+
+Before running any `bj` command, make sure the CLI is on `PATH`. If `command -v
+bj` finds nothing, install it. This snippet picks whatever installer is already
+available and prefers an isolated, self-updating install:
+
+```bash
+if ! command -v bj >/dev/null 2>&1; then
+  if command -v uv >/dev/null 2>&1; then
+    uv tool install bitbucket-jira-cli          # isolated, self-updating (preferred)
+  elif command -v pipx >/dev/null 2>&1; then
+    pipx install bitbucket-jira-cli
+  elif command -v pip3 >/dev/null 2>&1 || command -v pip >/dev/null 2>&1; then
+    pip install --user bitbucket-jira-cli
+  else
+    curl -LsSf uvx.sh/bitbucket-jira-cli/install.sh | sh   # installs uv, then bj
+  fi
+fi
+```
+
+On Windows PowerShell, install with:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://uvx.sh/bitbucket-jira-cli/install.ps1 | iex"
+```
+
+Then verify, and fix `PATH` if the install dir is not picked up yet:
+
+```bash
+command -v bj >/dev/null 2>&1 || export PATH="$HOME/.local/bin:$PATH"  # uv/pip user bin
+bj --help >/dev/null    # confirms bj is installed and runnable
+```
+
+To run `bj` once without installing it (one-off commands, ephemeral CI), use
+`uvx bitbucket-jira-cli <args>` in place of `bj <args>`. For repeated use in a
+session, install it once with the snippet above so later `bj` calls just work.
 
 ## Setup
 
