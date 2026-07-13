@@ -1,0 +1,12 @@
+{
+  "name": "bitbucket-jira-cli",
+  "description": "gh-style CLI for Bitbucket (PRs, repos, pipelines) and Jira (issues), with branch-name-as-Jira-key automation. Bundles an agent skill that self-installs the bj CLI.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Sebastian Penhouet"
+  },
+  "homepage": "https://spenhouet.github.io/bitbucket-jira-cli/",
+  "repository": "https://github.com/Spenhouet/bitbucket-jira-cli",
+  "license": "MIT",
+  "keywords": ["bitbucket", "jira", "atlassian", "cli", "gh", "pull-request", "agent-skill"]
+}
