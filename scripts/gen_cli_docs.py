@@ -50,7 +50,9 @@ DESCRIPTIONS: dict[str, str] = {
         "Jira Cloud. It manages Bitbucket pull requests, repositories and "
         "pipelines and Jira issues from a single noun-first command surface, and "
         "reads the Jira key from your git branch to auto-link and transition "
-        "tickets. See the [branch-key workflow](../guides/branch-key.md) guide."
+        "tickets. It works with Bitbucket Cloud and Jira Cloud; Server and Data "
+        "Center are not supported yet. See the "
+        "[branch-key workflow](../guides/branch-key.md) guide."
     ),
     "auth": (
         "`bj` stores two independent credentials, one for Bitbucket and one for "

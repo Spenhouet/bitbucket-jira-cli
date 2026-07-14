@@ -15,6 +15,10 @@ carries a Jira key (e.g. `feature/PROJ-42-thing`), and commands use it to
 auto-link pull requests to tickets and drive Jira transitions. See the
 [branch-key workflow](./guides/branch-key.md) guide.
 
+`bj` works with Bitbucket Cloud and Jira Cloud. Bitbucket and Jira Server or
+Data Center are not supported yet. Contributions to add on-prem support are
+welcome.
+
 ## Next steps
 
 - [Installation](./installation.md): install with uv, pip, or Docker.
