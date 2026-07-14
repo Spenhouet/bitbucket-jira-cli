@@ -7,6 +7,9 @@ title: Configuration
 `bj` follows the same split the GitHub CLI uses: non-sensitive settings live in a
 YAML file; secrets (API tokens) go to the OS keyring.
 
+`bj` works with Bitbucket Cloud and Jira Cloud. Bitbucket and Jira Server or Data
+Center are not supported yet.
+
 ## Location
 
 The config directory is `$BJ_CONFIG_DIR`, else `$XDG_CONFIG_HOME/bitbucket-jira-cli`,

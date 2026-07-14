@@ -14,7 +14,7 @@ bj <command> [OPTIONS]
 
 ## Description
 
-`bj` brings the ergonomics of GitHub's `gh` CLI to Bitbucket Cloud and Jira Cloud. It manages Bitbucket pull requests, repositories and pipelines and Jira issues from a single noun-first command surface, and reads the Jira key from your git branch to auto-link and transition tickets. See the [branch-key workflow](../guides/branch-key.md) guide.
+`bj` brings the ergonomics of GitHub's `gh` CLI to Bitbucket Cloud and Jira Cloud. It manages Bitbucket pull requests, repositories and pipelines and Jira issues from a single noun-first command surface, and reads the Jira key from your git branch to auto-link and transition tickets. It works with Bitbucket Cloud and Jira Cloud; Server and Data Center are not supported yet. See the [branch-key workflow](../guides/branch-key.md) guide.
 
 ## Core commands
 

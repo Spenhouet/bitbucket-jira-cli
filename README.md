@@ -30,6 +30,12 @@ The signature feature is **branch-name-as-Jira-key**: your current git branch
 carries a Jira key (e.g. `feature/PROJ-42-thing`), and commands use it to
 auto-link pull requests to tickets and drive Jira transitions.
 
+## Requirements
+
+`bj` works with Bitbucket Cloud and Jira Cloud. Bitbucket and Jira Server or
+Data Center are not supported yet. Contributions to add on-prem support are
+welcome.
+
 ## Quickstart
 
 ### 1. Install

@@ -4,6 +4,11 @@ title: Installation
 
 # Installation
 
+!!! note
+    `bj` works with Bitbucket Cloud and Jira Cloud. Bitbucket and Jira Server or
+    Data Center are not supported yet. Contributions to add on-prem support are
+    welcome.
+
 ## Recommended: one-line install (uv)
 
 The install script sets up an isolated, self-updating CLI via
