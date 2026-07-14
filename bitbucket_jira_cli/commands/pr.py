@@ -35,6 +35,7 @@ from bitbucket_jira_cli.interaction import require_input
 from bitbucket_jira_cli.interaction import run_with_status
 from bitbucket_jira_cli.interaction import select
 from bitbucket_jira_cli.jira_ops import link_pr
+from bitbucket_jira_cli.jira_ops import transition_options
 from bitbucket_jira_cli.jira_ops import transition_to
 from bitbucket_jira_cli.render import render_pr
 from bitbucket_jira_cli.render import render_pr_list
@@ -182,13 +183,7 @@ async def _do_create(
             async with jira:
                 url = pr.get("links", {}).get("html", {}).get("href") or ""
                 await link_pr(jira, key, url, title)
-                target = config.transitions.on_pr_create
-                if target and await transition_to(jira, key, target):
-                    err_console.print(f"[green]✓[/green] {key} → {target}")
-                elif target:
-                    err_console.print(
-                        f"[yellow]![/yellow] {key}: no '{target}' transition available"
-                    )
+                await _transition_and_report(jira, key, config.transitions.on_pr_create)
     return pr
 
 
@@ -498,16 +493,35 @@ def _prompt_merge_method(delete_branch: bool) -> tuple[str, bool]:
     return strategy, delete_branch
 
 
+async def _transition_and_report(jira: JiraClient, key: str, target: str | None) -> None:
+    """Transition the issue to ``target``, or surface an actionable message if it cannot.
+
+    When ``target`` is not reachable from the issue's current status, print that status and
+    the transitions that ARE available, plus the command to apply one. This turns a dead end
+    into a next step a person or an agent can act on.
+    """
+    if not target:
+        return
+    if await transition_to(jira, key, target):
+        err_console.print(f"[green]✓[/green] {key} → {target}")
+        return
+    names, status = await transition_options(jira, key)
+    where = f" from '{status}'" if status else ""
+    err_console.print(f"[yellow]![/yellow] {key}: no '{target}' transition{where}.")
+    if names:
+        available = ", ".join(names)
+        err_console.print(f"    available now: {available}")
+        err_console.print(f'    apply one with: bj issue transition {key} "<name>"')
+    else:
+        err_console.print("    no transitions are available from here.")
+
+
 async def _transition_after_merge(config: Config, key: str) -> None:
     jira = _jira_if_configured(config)
     if not jira:
         return
     async with jira:
-        target = config.transitions.on_pr_merge
-        if target and await transition_to(jira, key, target):
-            err_console.print(f"[green]✓[/green] {key} → {target}")
-        elif target:
-            err_console.print(f"[yellow]![/yellow] {key}: no '{target}' transition")
+        await _transition_and_report(jira, key, config.transitions.on_pr_merge)
 
 
 @pr_app.command()
