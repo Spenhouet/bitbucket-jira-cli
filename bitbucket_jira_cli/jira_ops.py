@@ -32,6 +32,19 @@ async def transition_to(client: JiraClient, key: str, target_name: str) -> bool:
     return True
 
 
+async def transition_options(client: JiraClient, key: str) -> tuple[list[str], str | None]:
+    """Return the transitions available from the issue's current status, plus that status.
+
+    Used to give an actionable message when a configured transition is not reachable
+    from where the issue currently sits.
+    """
+    transitions = await client.get_transitions(key)
+    names = [str(t["name"]) for t in transitions if t.get("name")]
+    issue = await client.get_issue(key, fields=["status"])
+    status = issue.get("fields", {}).get("status", {}).get("name")
+    return names, status
+
+
 async def link_pr(client: JiraClient, key: str, pr_url: str, title: str) -> None:
     """Attach a PR URL to an issue as a remote link (idempotent via globalId)."""
     await client.create_remote_link(key, pr_url, title, global_id=pr_url)
