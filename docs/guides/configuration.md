@@ -80,6 +80,7 @@ other, so tick every box you want):
 - `read:pipeline:bitbucket`, `write:pipeline:bitbucket`, `admin:pipeline:bitbucket`
 - `read:ssh-key:bitbucket`, `write:ssh-key:bitbucket`, `delete:ssh-key:bitbucket`
 - `read:snippet:bitbucket`, `write:snippet:bitbucket`, `delete:snippet:bitbucket`
+- `read:webhook:bitbucket`, `write:webhook:bitbucket`, `delete:webhook:bitbucket`
 
 Which scope each command family needs:
 
@@ -95,6 +96,9 @@ Which scope each command family needs:
 | `snippet list` / `view` | `read:snippet:bitbucket` |
 | `snippet create` | `write:snippet:bitbucket` |
 | `snippet delete` | `delete:snippet:bitbucket` |
+| `webhook list` / `view` / `events` | `read:webhook:bitbucket` |
+| `webhook create` / `edit` | `write:webhook:bitbucket` |
+| `webhook delete` | `delete:webhook:bitbucket` |
 
 The `delete:*` and `admin:*` scopes are separate on purpose: a token with only
 `write:repository:bitbucket` can create and edit repos but not delete them.

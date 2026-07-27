@@ -101,6 +101,7 @@ export BJ_JIRA_TOKEN=...        # Jira API token
 | `gh ssh-key` | `bj ssh-key` |
 | `gh status` | `bj status` |
 | `gh project` | `bj board` (Jira boards/sprints) |
+| `gh webhook` (extension) | `bj webhook` (full CRUD; no `forward`) |
 
 ## Differences from `gh`
 
