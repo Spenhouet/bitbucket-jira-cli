@@ -61,6 +61,7 @@ bj <command> [OPTIONS]
 | [`bj skill`](skill/index.md) | Install the bj agent skill into a coding agent (mirrors `gh skill`). |
 | [`bj snippet`](snippet/index.md) | Work with Bitbucket snippets. |
 | [`bj ruleset`](ruleset/index.md) | Inspect Bitbucket branch restrictions. |
+| [`bj webhook`](webhook/index.md) | Manage Bitbucket webhooks. |
 | [`bj browse`](browse.md) | Open the repository, current PR, or branch's Jira issue in the browser. |
 | [`bj api`](api.md) | Make an authenticated request to the Bitbucket or Jira API. |
 

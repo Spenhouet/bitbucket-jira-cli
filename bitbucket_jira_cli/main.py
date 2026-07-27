@@ -27,6 +27,7 @@ from bitbucket_jira_cli.commands.skill import skill_app
 from bitbucket_jira_cli.commands.snippet import snippet_app
 from bitbucket_jira_cli.commands.sshkey import sshkey_app
 from bitbucket_jira_cli.commands.variable import variable_app
+from bitbucket_jira_cli.commands.webhook import webhook_app
 from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.errors import BjError
 from bitbucket_jira_cli.ui import print_error
@@ -51,6 +52,7 @@ app.add_typer(search_app, name="search")
 app.add_typer(sshkey_app, name="ssh-key")
 app.add_typer(snippet_app, name="snippet")
 app.add_typer(ruleset_app, name="ruleset")
+app.add_typer(webhook_app, name="webhook")
 app.add_typer(board_app, name="board")
 app.add_typer(alias_app, name="alias")
 app.command(name="browse")(browse)

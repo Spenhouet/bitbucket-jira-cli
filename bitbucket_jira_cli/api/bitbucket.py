@@ -382,6 +382,68 @@ class BitbucketClient(BaseAsyncClient):
             params={"pagelen": 100},
         )
 
+    # -- webhooks -----------------------------------------------------------
+    # Bitbucket registers webhooks on two subject types: a repository or a whole
+    # workspace. Both expose the same /hooks collection, so one base builder covers
+    # them: pass repo_slug for repository scope, omit it for workspace scope.
+    def _hook_base(self, workspace: str, repo_slug: str | None) -> str:
+        if repo_slug:
+            return f"/repositories/{workspace}/{repo_slug}/hooks"
+        return f"/workspaces/{workspace}/hooks"
+
+    async def list_webhooks(
+        self, workspace: str, repo_slug: str | None = None
+    ) -> list[dict[str, Any]]:
+        return await self._paginate(
+            self._hook_base(workspace, repo_slug), params={"pagelen": 100}
+        )
+
+    async def get_webhook(
+        self, workspace: str, hook_uid: str, repo_slug: str | None = None
+    ) -> dict[str, Any]:
+        return await self.get_json(f"{self._hook_base(workspace, repo_slug)}/{quote(hook_uid)}")
+
+    async def create_webhook(
+        self,
+        workspace: str,
+        url: str,
+        events: list[str],
+        *,
+        repo_slug: str | None = None,
+        description: str | None = None,
+        active: bool = True,
+        secret: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "url": url,
+            "events": events,
+            "active": active,
+            "description": description or url,
+        }
+        if secret:
+            body["secret"] = secret
+        response = await self.request("POST", self._hook_base(workspace, repo_slug), json=body)
+        return response.json()
+
+    async def update_webhook(
+        self, workspace: str, hook_uid: str, body: dict[str, Any], repo_slug: str | None = None
+    ) -> dict[str, Any]:
+        response = await self.request(
+            "PUT", f"{self._hook_base(workspace, repo_slug)}/{quote(hook_uid)}", json=body
+        )
+        return response.json()
+
+    async def delete_webhook(
+        self, workspace: str, hook_uid: str, repo_slug: str | None = None
+    ) -> None:
+        await self.request(
+            "DELETE", f"{self._hook_base(workspace, repo_slug)}/{quote(hook_uid)}"
+        )
+
+    async def list_hook_events(self, subject_type: str = "repository") -> list[dict[str, Any]]:
+        """List the events a webhook can subscribe to for a subject type."""
+        return await self._paginate(f"/hook_events/{subject_type}", params={"pagelen": 100})
+
     # -- snippets (gist analog) --------------------------------------------
     async def list_snippets(self, workspace: str, *, limit: int = 30) -> list[dict[str, Any]]:
         return await self._paginate(f"/snippets/{workspace}", params={"pagelen": 50}, limit=limit)

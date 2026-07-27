@@ -215,6 +215,14 @@ nav:
       - bj ruleset:
           - Overview: reference/ruleset/index.md
           - list: reference/ruleset/list.md
+      - bj webhook:
+          - Overview: reference/webhook/index.md
+          - list: reference/webhook/list.md
+          - view: reference/webhook/view.md
+          - create: reference/webhook/create.md
+          - edit: reference/webhook/edit.md
+          - delete: reference/webhook/delete.md
+          - events: reference/webhook/events.md
       - bj browse: reference/browse.md
       - bj api: reference/api.md
   # gen:reference:end

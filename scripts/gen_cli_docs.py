@@ -40,7 +40,7 @@ GROUPS: list[tuple[str, list[str]]] = [
     ("Pipelines", ["pipeline", "variable"]),
     ("Search and status", ["search", "status"]),
     ("Configuration", ["config", "alias", "ssh-key"]),
-    ("Utility", ["skill", "snippet", "ruleset", "browse", "api"]),
+    ("Utility", ["skill", "snippet", "ruleset", "webhook", "browse", "api"]),
 ]
 
 # Extended descriptions for the commands that warrant more than the one-liner.
@@ -124,6 +124,15 @@ DESCRIPTIONS: dict[str, str] = {
     "alias": (
         "User-defined command shortcuts, stored in `config.yml` and expanded "
         "before dispatch. `bj alias set co 'pr checkout'` makes `bj co` work."
+    ),
+    "webhook": (
+        "Bitbucket webhooks. Bitbucket registers them on one of two subject "
+        "types, a single repository or a whole workspace, so commands default to "
+        "the current repository and `--workspace NAME` switches to workspace "
+        "scope. Run `bj webhook events` for the event names you can subscribe "
+        "to. There is no `forward` subcommand: the `gh webhook` extension's "
+        "forwarding relies on a GitHub-side relay that Bitbucket has no "
+        "equivalent for."
     ),
     "ssh-key": (
         "Manage your Bitbucket account SSH keys. Needs a token with account "
@@ -220,6 +229,23 @@ EXAMPLES: dict[str, list[str]] = {
         "bj search repos api --workspace myteam",
         'bj search code "TODO" --workspace myteam',
         "bj search issues \"project = PROJ AND status = 'In Progress'\"",
+    ],
+    "webhook create": [
+        "# Subscribe the current repo to pushes and PR events",
+        "bj webhook create --url https://example.com/hook -e repo:push -e pullrequest:created",
+        "",
+        "# Workspace-level, signed, with a label",
+        "bj webhook create -W myteam -u https://example.com/hook -e repo:push \\",
+        '  --secret "$HOOK_SECRET" -d "CI trigger"',
+    ],
+    "webhook list": [
+        "bj webhook list",
+        "bj webhook list --workspace myteam",
+        "bj webhook list --json | jq '.[].url'",
+    ],
+    "webhook events": [
+        "bj webhook events",
+        "bj webhook events --subject workspace",
     ],
     "alias set": [
         "bj alias set prs 'pr list --state open'",
