@@ -23,6 +23,8 @@ dependencies = [
     'tabulate',
     'typer',
     'python-dateutil',
+    "markdown-it-py>=4.2.0",
+    "linkify-it-py>=2.1.0",
 ]
 
 
