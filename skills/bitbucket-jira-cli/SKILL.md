@@ -148,6 +148,10 @@ bj issue create --project PROJ --type Bug --summary "..."
 bj issue edit PROJ-42 --field "Story Points=3"
 bj issue transition PROJ-42 "In Review"
 bj issue fields PROJ-42                 # list editable fields on the issue
+bj issue link PROJ-42 PROJ-43 --type blocks    # PROJ-42 blocks PROJ-43
+bj issue link https://example.com/doc   # attach a URL to the branch's issue
+bj issue links PROJ-42                  # linked issues and URLs
+bj issue unlink PROJ-42 PROJ-43         # remove a link
 
 # Repos and pipelines (Bitbucket)
 bj repo clone WORKSPACE/REPO

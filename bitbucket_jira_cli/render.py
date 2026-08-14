@@ -169,6 +169,49 @@ def render_issue_fields(rows: list[dict[str, Any]]) -> None:
     console.print(table)
 
 
+def issue_link_parts(link: dict[str, Any]) -> tuple[str, str, str]:
+    """Split one ``issuelinks`` entry into (relationship, other issue key, summary).
+
+    An entry seen from issue A holds the *other* issue under ``outwardIssue`` or
+    ``inwardIssue``; which side it is decides whether the type's outward wording
+    ("blocks") or inward wording ("is blocked by") describes the relationship.
+    """
+    link_type = link.get("type", {})
+    other = link.get("outwardIssue")
+    relation = link_type.get("outward") or "relates to"
+    if other is None:
+        other = link.get("inwardIssue") or {}
+        relation = link_type.get("inward") or "relates to"
+    return str(relation), str(other.get("key", "")), str(other.get("fields", {}).get("summary", ""))
+
+
+def remote_link_parts(link: dict[str, Any]) -> tuple[str, str, str]:
+    """Split one remote link into (relationship, url, title)."""
+    obj = link.get("object", {})
+    relation = str(link.get("relationship") or "links to")
+    return relation, str(obj.get("url", "")), str(obj.get("title", ""))
+
+
+def render_issue_links(
+    key: str, issue_links: list[dict[str, Any]], remote_links: list[dict[str, Any]]
+) -> None:
+    if not issue_links and not remote_links:
+        console.print(f"[dim]No links on {key}.[/dim]")
+        return
+    table = Table(box=None, pad_edge=False)
+    table.add_column("Id", style="dim")
+    table.add_column("Relationship", style="yellow")
+    table.add_column("Target", style="cyan")
+    table.add_column("Summary")
+    for link in issue_links:
+        relation, target, summary = issue_link_parts(link)
+        table.add_row(str(link.get("id", "")), relation, target, summary)
+    for link in remote_links:
+        relation, url, title = remote_link_parts(link)
+        table.add_row(str(link.get("id", "")), relation, url, title)
+    console.print(table)
+
+
 def render_issue(issue: dict[str, Any], comments: list[dict[str, Any]] | None = None) -> None:
     fields = issue.get("fields", {})
     console.print(f"[bold]{issue.get('key')} {fields.get('summary', '')}[/bold]")
@@ -184,6 +227,12 @@ def render_issue(issue: dict[str, Any], comments: list[dict[str, Any]] | None = 
     if description:
         console.print()
         console.print(adf_to_text(description).strip())
+    links = fields.get("issuelinks") or []
+    if links:
+        console.print("\n[bold]Links[/bold]")
+        for link in links:
+            relation, target, summary = issue_link_parts(link)
+            console.print(f"  {relation} [cyan]{target}[/cyan] {summary}")
     if comments:
         console.print("\n[bold]Comments[/bold]")
         for c in comments:
