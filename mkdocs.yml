@@ -150,6 +150,9 @@ nav:
           - create: reference/issue/create.md
           - edit: reference/issue/edit.md
           - comment: reference/issue/comment.md
+          - link: reference/issue/link.md
+          - links: reference/issue/links.md
+          - unlink: reference/issue/unlink.md
           - transition: reference/issue/transition.md
           - close: reference/issue/close.md
           - develop: reference/issue/develop.md

@@ -139,6 +139,26 @@ class JiraClient(BaseAsyncClient):
     async def get_remote_links(self, key: str) -> list[dict[str, Any]]:
         return await self.get_json(f"/issue/{key}/remotelink")
 
+    async def delete_remote_link(self, key: str, link_id: str) -> None:
+        await self.request("DELETE", f"/issue/{key}/remotelink/{link_id}")
+
+    # -- issue links (issue-to-issue relationships) -------------------------
+    async def list_issue_link_types(self) -> list[dict[str, Any]]:
+        data = await self.get_json("/issueLinkType")
+        return data.get("issueLinkTypes", [])
+
+    async def create_issue_link(self, type_name: str, inward_key: str, outward_key: str) -> None:
+        """Link two issues: the link reads "inward_key <outward description> outward_key"."""
+        body = {
+            "type": {"name": type_name},
+            "inwardIssue": {"key": inward_key},
+            "outwardIssue": {"key": outward_key},
+        }
+        await self.request("POST", "/issueLink", json=body)
+
+    async def delete_issue_link(self, link_id: str) -> None:
+        await self.request("DELETE", f"/issueLink/{link_id}")
+
     async def delete_issue(self, key: str) -> None:
         await self.request("DELETE", f"/issue/{key}")
 
