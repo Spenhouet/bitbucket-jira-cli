@@ -108,6 +108,10 @@ export BJ_JIRA_TOKEN=...        # Jira API token
 - Two products behind one CLI: Bitbucket owns `pr`, `repo`, `pipeline`; Jira owns
   `issue`. Each backend has its own token (`BJ_BITBUCKET_TOKEN`, `BJ_JIRA_TOKEN`).
 - `bj issue` targets Jira. Issue keys look like `PROJ-42`, not numbers.
+- Jira descriptions and comments are written as Markdown and converted to ADF
+  (Jira Cloud's document format). Headings, lists, tables, code blocks, links and
+  bold/italic/strikethrough all carry over. Wiki markup (`h3.`, `*item*`) does
+  not: Jira Cloud dropped it, so it shows up verbatim.
 - `bj pipeline` is Bitbucket Pipelines, the analog of `gh run`.
 - `--json` emits the whole raw Bitbucket/Jira response. There is no `gh`-style
   field list; filter with `--jq` instead.
