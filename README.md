@@ -55,7 +55,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://uvx.sh/bitbucket-jira-cli/ins
 Installing a specific version:
 
 ```bash
-curl -LsSf uvx.sh/bitbucket-jira-cli/1.1.0/install.sh | sh
+curl -LsSf uvx.sh/bitbucket-jira-cli/1.2.0/install.sh | sh
 ```
 
 Alternative install methods (PyPI via `pip` / `uv`, prebuilt Docker image) are
