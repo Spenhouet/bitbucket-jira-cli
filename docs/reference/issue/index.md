@@ -22,6 +22,9 @@ bj issue <command> [OPTIONS]
 | [`create`](create.md) | Create a Jira issue. |
 | [`edit`](edit.md) | Edit a Jira issue: summary, description, assignee, labels, priority, or any --field. |
 | [`comment`](comment.md) | Add a comment to a Jira issue. |
+| [`link`](link.md) | Link an issue to another issue, or attach a URL to it. |
+| [`links`](links.md) | List an issue's links: related issues and attached URLs. |
+| [`unlink`](unlink.md) | Remove a link from an issue. |
 | [`transition`](transition.md) | Transition an issue, choosing from the available states when none is given. |
 | [`close`](close.md) | Close a Jira issue (transition to the configured done state). |
 | [`develop`](develop.md) | Create a local git branch for an issue (its key drives branch-key automation). |

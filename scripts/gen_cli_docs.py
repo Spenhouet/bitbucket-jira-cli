@@ -77,6 +77,25 @@ DESCRIPTIONS: dict[str, str] = {
         "View a Jira issue. With no key, the key is read from the current git "
         "branch name."
     ),
+    "issue link": (
+        "Link an issue to another issue, or attach a URL to it. A target that "
+        "looks like an issue key creates an issue link; anything starting with "
+        "`http://` or `https://` is attached as a remote link, using the URL as "
+        "its `globalId` so re-linking the same URL updates it instead of adding "
+        "a duplicate. `--type` takes the link type name or either direction's "
+        "wording: `--type blocks` reads *KEY blocks TARGET*, `--type 'is blocked "
+        "by'` reads *KEY is blocked by TARGET* and swaps the two issues in the "
+        "payload. Without `--type` the type is picked interactively, or defaults "
+        "to `Relates` when there is no terminal."
+    ),
+    "issue links": (
+        "List an issue's links: related issues (with the relationship as Jira "
+        "words it) and attached URLs. The `Id` column feeds `bj issue unlink`."
+    ),
+    "issue unlink": (
+        "Remove a link from an issue. The target can be the linked issue's key, "
+        "the attached URL, or a link id from `bj issue links`."
+    ),
     "api": (
         "Make an authenticated request against the Bitbucket or Jira REST API and "
         "print the JSON response. Choose the backend with `--backend`; `--field` "
@@ -200,6 +219,24 @@ EXAMPLES: dict[str, list[str]] = {
         "bj issue transition PROJ-42",
         "# Perform one",
         'bj issue transition PROJ-42 "In Review"',
+    ],
+    "issue link": [
+        "# PROJ-42 blocks PROJ-43",
+        "bj issue link PROJ-42 PROJ-43 --type blocks",
+        "",
+        "# The other direction: PROJ-42 is blocked by PROJ-43",
+        "bj issue link PROJ-42 PROJ-43 --type 'is blocked by'",
+        "",
+        "# Attach a URL to the branch's issue",
+        "bj issue link https://example.com/design --title 'Design doc'",
+    ],
+    "issue links": [
+        "bj issue links PROJ-42",
+        "bj issue links --json | jq '.remoteLinks[].object.url'",
+    ],
+    "issue unlink": [
+        "bj issue unlink PROJ-42 PROJ-43",
+        "bj issue unlink PROJ-42 https://example.com/design --yes",
     ],
     "skill install": [
         "# Install for Claude Code in the current repo",
