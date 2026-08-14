@@ -108,10 +108,6 @@ export BJ_JIRA_TOKEN=...        # Jira API token
 - Two products behind one CLI: Bitbucket owns `pr`, `repo`, `pipeline`; Jira owns
   `issue`. Each backend has its own token (`BJ_BITBUCKET_TOKEN`, `BJ_JIRA_TOKEN`).
 - `bj issue` targets Jira. Issue keys look like `PROJ-42`, not numbers.
-- Jira descriptions and comments are written as Markdown and converted to ADF
-  (Jira Cloud's document format). Headings, lists, tables, code blocks, links and
-  bold/italic/strikethrough all carry over. Wiki markup (`h3.`, `*item*`) does
-  not: Jira Cloud dropped it, so it shows up verbatim.
 - `bj pipeline` is Bitbucket Pipelines, the analog of `gh run`.
 - `--json` emits the whole raw Bitbucket/Jira response. There is no `gh`-style
   field list; filter with `--jq` instead.
@@ -148,8 +144,10 @@ bj pr merge --squash --delete-branch --yes
 # Issues (Jira)
 bj issue list --assignee me --json
 bj issue view PROJ-42 --json
-bj issue create --project PROJ --type Bug --summary "..."
+bj issue create --project PROJ --type Bug --summary "..." --body "..."
+bj issue edit PROJ-42 --body "$(cat body.md)"   # replace the description
 bj issue edit PROJ-42 --field "Story Points=3"
+bj issue comment PROJ-42 --body "..."
 bj issue transition PROJ-42 "In Review"
 bj issue fields PROJ-42                 # list editable fields on the issue
 bj issue link PROJ-42 PROJ-43 --type blocks    # PROJ-42 blocks PROJ-43
@@ -161,6 +159,28 @@ bj issue unlink PROJ-42 PROJ-43         # remove a link
 bj repo clone WORKSPACE/REPO
 bj pipeline list --json
 bj pipeline run --branch main
+```
+
+## Writing issue descriptions and comments
+
+- `--body`/`-b` carries the description on `issue create` and `issue edit`, and
+  the text on `issue comment`. `--editor`/`-e` opens `$EDITOR` instead, which is
+  no use non-interactively.
+- Bodies are **Markdown**. They are converted to Jira Cloud's ADF, so headings,
+  bullet and numbered lists, tables, fenced code blocks, block quotes, links and
+  bold/italic/strikethrough/inline code all render. Wiki markup (`h3.`, `{code}`)
+  does not: Jira Cloud dropped it and it shows up verbatim.
+- For a multi-line body, write the Markdown to a file and pass it in, which keeps
+  quoting and backticks intact:
+
+```bash
+bj issue create --project PROJ --type Task --summary "..." --body "$(cat body.md)"
+```
+
+- Setting the epic or parent needs the field as an object, not a bare key:
+
+```bash
+bj issue edit PROJ-42 --field 'Parent={"key":"PROJ-1"}'   # bare PROJ-1 is rejected
 ```
 
 ## Safety
