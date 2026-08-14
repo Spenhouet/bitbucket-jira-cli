@@ -177,10 +177,11 @@ bj pipeline run --branch main
 bj issue create --project PROJ --type Task --summary "..." --body "$(cat body.md)"
 ```
 
-- Setting the epic or parent needs the field as an object, not a bare key:
+- Set the epic or parent with a bare issue key. An explicit `{"key": "PROJ-1"}`
+  or a numeric issue id works too:
 
 ```bash
-bj issue edit PROJ-42 --field 'Parent={"key":"PROJ-1"}'   # bare PROJ-1 is rejected
+bj issue edit PROJ-42 --field Parent=PROJ-1
 ```
 
 ## Safety
