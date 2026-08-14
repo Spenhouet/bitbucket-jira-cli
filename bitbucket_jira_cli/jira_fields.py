@@ -51,6 +51,17 @@ def _option(value: str, allowed: list[dict[str, Any]]) -> dict[str, str]:
     return {"value": value}
 
 
+def _issue_link(raw: str) -> Any:
+    """Reference another issue by key or id, which the API takes as an object."""
+    text = raw.strip()
+    if text.startswith("{"):
+        try:
+            return json.loads(text)
+        except ValueError:
+            pass
+    return {"id": text} if text.isdigit() else {"key": text}
+
+
 def is_user_type(schema: dict[str, Any]) -> bool:
     return schema.get("type") == "user" or (
         schema.get("type") == "array" and schema.get("items") == "user"
@@ -73,6 +84,8 @@ def coerce_value(raw: str, meta: dict[str, Any]) -> Any:  # noqa: PLR0911
         return _option(raw, allowed)
     if field_type in ("priority", "version", "component", "resolution", "project"):
         return {"name": raw}
+    if field_type == "issuelink":
+        return _issue_link(raw)
     if field_type == "array":
         parts = [p.strip() for p in raw.split(",") if p.strip()]
         items = schema.get("items")
