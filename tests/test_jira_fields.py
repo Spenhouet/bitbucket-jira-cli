@@ -62,6 +62,40 @@ def test_array_of_strings_splits_on_commas() -> None:
     assert coerce_value("a, b", _meta("array", items="string")) == ["a", "b"]
 
 
+@pytest.mark.parametrize("item_type", ["version", "component", "group"])
+def test_array_of_named_objects_wraps_every_element(item_type: str) -> None:
+    coerced = coerce_value("v1.2.0, v1.3.0", _meta("array", items=item_type))
+    assert coerced == [{"name": "v1.2.0"}, {"name": "v1.3.0"}]
+
+
+def test_array_of_options_matches_allowed_values() -> None:
+    meta = {
+        **_meta("array", items="option"),
+        "allowedValues": [{"value": "Yes", "id": "1"}, {"value": "No", "id": "2"}],
+    }
+    assert coerce_value("yes, no", meta) == [{"value": "Yes"}, {"value": "No"}]
+
+
+def test_array_of_issue_links_wraps_every_key() -> None:
+    coerced = coerce_value("PROJ-1, PROJ-2", _meta("array", items="issuelink"))
+    assert coerced == [{"key": "PROJ-1"}, {"key": "PROJ-2"}]
+
+
+def test_array_of_numbers_keeps_their_kind() -> None:
+    assert coerce_value("3, 2.5", _meta("array", items="number")) == [3, 2.5]
+
+
+def test_array_of_an_unknown_item_type_stays_strings() -> None:
+    assert coerce_value("a, b", _meta("array", items="mystery")) == ["a", "b"]
+
+
+@pytest.mark.parametrize(
+    "field_type", ["priority", "version", "component", "resolution", "project", "group"]
+)
+def test_named_object_field_wraps_the_value(field_type: str) -> None:
+    assert coerce_value("High", _meta(field_type)) == {"name": "High"}
+
+
 def test_option_matches_an_allowed_value() -> None:
     meta = {**_meta("option"), "allowedValues": [{"value": "High", "id": "1"}]}
     assert coerce_value("high", meta) == {"value": "High"}
