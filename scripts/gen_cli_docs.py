@@ -64,9 +64,11 @@ DESCRIPTIONS: dict[str, str] = {
     "pr create": (
         "Open a pull request for the current branch. When the branch name "
         "carries a Jira key (e.g. `feature/PROJ-42-thing`), `bj` fills the title "
-        "from the ticket, links the PR to the issue, and transitions the ticket "
-        "to the configured in-progress state. Use `--no-jira` to skip that, or "
-        "`--dry-run` to preview without writing. See "
+        "from the ticket, links the PR to the issue, appends a `Jira:` link to "
+        "the description, and transitions the ticket to the configured "
+        "in-progress state. The `Jira:` line is skipped when the description "
+        "already names the key. Use `--no-jira` to skip that, or `--dry-run` to "
+        "preview without writing. See "
         "[branch-key workflow](../../guides/branch-key.md)."
     ),
     "pr merge": (
