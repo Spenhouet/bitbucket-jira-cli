@@ -17,6 +17,7 @@ from bitbucket_jira_cli.config import Config
 from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.context import bitbucket_authorization
 from bitbucket_jira_cli.context import bitbucket_client
+from bitbucket_jira_cli.context import jira_browse_url
 from bitbucket_jira_cli.context import jira_client
 from bitbucket_jira_cli.context import jira_client_or_none
 from bitbucket_jira_cli.errors import BjError
@@ -64,10 +65,11 @@ def browse(
     config = load_config()
     if target == "issue":
         key = parse_branch_key(current_branch() or "", config.branch_key)
-        if not key or not config.jira.site:
+        url = jira_browse_url(config, key) if key else None
+        if not url:
             msg = "No Jira key in the branch, or Jira site not configured."
             raise BjError(msg)
-        _emit_url(f"{config.jira.site}/browse/{key}", no_browser=no_browser)
+        _emit_url(url, no_browser=no_browser)
         return
     ref = resolve_repo(repo)
     if target == "pr":
