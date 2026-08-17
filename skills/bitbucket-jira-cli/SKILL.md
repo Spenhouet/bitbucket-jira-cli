@@ -184,6 +184,16 @@ bj issue create --project PROJ --type Task --summary "..." --body "$(cat body.md
 bj issue edit PROJ-42 --field Parent=PROJ-1
 ```
 
+- `--field` takes plain values for every field type, including multi-value fields
+  such as fix versions, components, labels and linked issues. Separate the values
+  with commas; `bj` reads the field's schema off the issue and sends each one in
+  the shape the API wants:
+
+```bash
+bj issue edit PROJ-42 --field "Fix versions=v1.3.0"
+bj issue edit PROJ-42 --field "Components=Backend, Reporting"
+```
+
 ## Safety
 
 - Run `bj pr create` / `bj pr merge` with `--dry-run` first when unsure.
