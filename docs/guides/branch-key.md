@@ -38,7 +38,9 @@ On a branch with a key, [`bj pr create`](../reference/pr/create.md):
 
 1. Reads the key (e.g. `PROJ-42`).
 2. Fills the PR **title** from the Jira ticket summary (`PROJ-42: <summary>`)
-   unless you pass `--title`, and references the key in the body.
+   unless you pass `--title`, and appends `Jira: [PROJ-42](…/browse/PROJ-42)` to
+   the description so a reviewer reaches the ticket from the pull request. The
+   line is skipped when the description already names the key.
 3. Creates the pull request.
 4. **Links** the PR URL to the issue as a Jira remote link.
 5. **Transitions** the ticket to the configured in-progress state

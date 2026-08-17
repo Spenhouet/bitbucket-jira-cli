@@ -16,6 +16,7 @@ from bitbucket_jira_cli.commands._common import resolve_repo
 from bitbucket_jira_cli.config import Config
 from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.context import bitbucket_authorization
+from bitbucket_jira_cli.context import jira_browse_url
 from bitbucket_jira_cli.context import jira_client_or_none
 from bitbucket_jira_cli.errors import BjError
 from bitbucket_jira_cli.git import RepoRef
@@ -126,6 +127,7 @@ async def _fetch_create_context(
     return {
         "default_base": repo_obj.get("mainbranch", {}).get("name", "main"),
         "ticket_summary": summary,
+        "ticket_url": jira_browse_url(config, key) if key else None,
         "members": members,
     }
 
@@ -150,7 +152,9 @@ def _compose_title_body(
     if not final_body:
         final_body = edit_text("") or "" if editor else optional_input("Body (optional)")
     if key and key not in final_body:
-        final_body = (final_body + f"\n\nJira: {key}").strip()
+        url = ctx.get("ticket_url")
+        reference = f"[{key}]({url})" if url else key
+        final_body = (final_body + f"\n\nJira: {reference}").strip()
     return final_title, final_body
 
 
