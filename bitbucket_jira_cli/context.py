@@ -45,6 +45,16 @@ def jira_rest_base(config: Config) -> str:
     return config.jira.site.rstrip("/") + "/rest/api/3"
 
 
+def jira_browse_url(config: Config, key: str) -> str | None:
+    """Human-facing URL of an issue, or None when the site host is not configured.
+
+    Gateway mode talks to api.atlassian.com, which is no use to a reader, so this
+    always builds on the site host that ``bj auth login`` records either way.
+    """
+    site = (config.jira.site or "").rstrip("/")
+    return f"{site}/browse/{key}" if site else None
+
+
 def jira_client(config: Config) -> JiraClient:
     token = get_token("jira")
     if not token:

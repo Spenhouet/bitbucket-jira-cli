@@ -121,7 +121,9 @@ export BJ_JIRA_TOKEN=...        # Jira API token
 gives `PROJ-42`) and uses it automatically:
 
 - `bj pr create` fills the PR title from the ticket, links the PR to the issue,
-  and transitions the ticket to In Progress.
+  appends `Jira: [PROJ-42](https://site/browse/PROJ-42)` to the description, and
+  transitions the ticket to In Progress. The line is skipped when the body
+  already names the key, so write your own reference if you want it elsewhere.
 - `bj pr merge` transitions the linked ticket to Done after a successful merge.
 
 Preview the effect without writing anything using `--dry-run`; skip all Jira side
