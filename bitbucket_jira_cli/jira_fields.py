@@ -62,36 +62,50 @@ def _issue_link(raw: str) -> Any:
     return {"id": text} if text.isdigit() else {"key": text}
 
 
+# Types the API identifies by name inside an object, e.g. {"name": "v1.2.0"}.
+_NAMED_TYPES = frozenset({"priority", "version", "component", "resolution", "project", "group"})
+# Types that travel as the plain string the user typed.
+_TEXT_TYPES = frozenset({"string", "date", "datetime"})
+_KNOWN_TYPES = _NAMED_TYPES | _TEXT_TYPES | {"number", "option", "issuelink"}
+
+
+def _coerce_one(raw: str, field_type: str | None, allowed: list[dict[str, Any]]) -> Any:
+    """Coerce one value, whether it is a whole field or a single array element."""
+    if field_type == "number":
+        return float(raw) if "." in raw else int(raw)
+    if field_type == "option":
+        return _option(raw, allowed)
+    if field_type == "issuelink":
+        return _issue_link(raw)
+    if field_type in _NAMED_TYPES:
+        return {"name": raw}
+    return raw
+
+
 def is_user_type(schema: dict[str, Any]) -> bool:
     return schema.get("type") == "user" or (
         schema.get("type") == "array" and schema.get("items") == "user"
     )
 
 
-def coerce_value(raw: str, meta: dict[str, Any]) -> Any:  # noqa: PLR0911
+def coerce_value(raw: str, meta: dict[str, Any]) -> Any:
     """Coerce a user-typed string to the JSON shape the field expects (non-user).
+
+    An array field takes a comma-separated list and coerces every element by the
+    field's ``schema.items``, so ``Fix versions=v1.2.0, v1.3.0`` reaches the API as
+    version objects rather than as bare strings.
 
     User-typed fields are resolved separately (they need an async accountId lookup).
     """
     schema = meta.get("schema", {})
     allowed = meta.get("allowedValues", [])
     field_type = schema.get("type")
-    if field_type == "number":
-        return float(raw) if "." in raw else int(raw)
-    if field_type in ("string", "date", "datetime"):
-        return raw
-    if field_type == "option":
-        return _option(raw, allowed)
-    if field_type in ("priority", "version", "component", "resolution", "project"):
-        return {"name": raw}
-    if field_type == "issuelink":
-        return _issue_link(raw)
     if field_type == "array":
+        item_type = schema.get("items")
         parts = [p.strip() for p in raw.split(",") if p.strip()]
-        items = schema.get("items")
-        if items == "option":
-            return [_option(p, allowed) for p in parts]
-        return parts  # array of strings (e.g. labels)
+        return [_coerce_one(p, item_type, allowed) for p in parts]
+    if field_type in _KNOWN_TYPES:
+        return _coerce_one(raw, field_type, allowed)
     # Unknown/complex type: accept literal JSON, else send the raw string.
     try:
         return json.loads(raw)
