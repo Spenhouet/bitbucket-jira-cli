@@ -140,12 +140,17 @@ class BitbucketClient(BaseAsyncClient):
         *,
         inline: dict[str, Any] | None = None,
         parent_id: int | None = None,
+        pending: bool = False,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {"content": {"raw": text}}
         if inline:
             body["inline"] = inline
         if parent_id is not None:
             body["parent"] = {"id": parent_id}
+        if pending:
+            # A pending comment is a draft that only its author sees until they
+            # press "Finish review" in the Bitbucket web UI.
+            body["pending"] = True
         response = await self.request(
             "POST", f"{self._pr_base(workspace, repo_slug)}/{pr_id}/comments", json=body
         )

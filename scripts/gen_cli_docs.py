@@ -75,6 +75,13 @@ DESCRIPTIONS: dict[str, str] = {
         "Merge a pull request. If the PR's branch carries a Jira key, the linked "
         "ticket is transitioned to the configured done state on success."
     ),
+    "pr comment": (
+        "Comment on a pull request. With `--pending` the comment is saved as a "
+        "draft that only you can see. It is published together with your other "
+        "pending comments when you press *Finish review* on the pull request in "
+        "Bitbucket, since the Bitbucket Cloud API has no call that publishes "
+        "them."
+    ),
     "issue view": (
         "View a Jira issue. With no key, the key is read from the current git "
         "branch name."
@@ -199,6 +206,12 @@ EXAMPLES: dict[str, list[str]] = {
         "bj pr view",
         "bj pr view 42 --comments",
         "bj pr view --web",
+    ],
+    "pr comment": [
+        "bj pr comment 42 --body 'Looks good'",
+        "bj pr comment 42 --file src/app.py --line 12 --body 'Typo here'",
+        "# Draft review comments, published later from the web UI",
+        "bj pr comment 42 --file src/app.py --line 12 --body 'Nit' --pending",
     ],
     "pr merge": [
         "bj pr merge --squash --delete-branch",
