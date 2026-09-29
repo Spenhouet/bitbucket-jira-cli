@@ -630,6 +630,22 @@ def _one_action(*flags: object) -> bool:
     return sum(1 for f in flags if f) <= 1
 
 
+def _added_comment_message(
+    created: dict[str, Any], what: str, pr_id: int, *, pending: bool
+) -> str:
+    if pending and created.get("pending"):
+        return (
+            f"Added pending {what} {created.get('id')} on PR #{pr_id}. "
+            "Finish the review in Bitbucket to publish it."
+        )
+    if pending:
+        err_console.print(
+            "[yellow]![/yellow] Bitbucket did not keep the comment pending, "
+            "so it is already visible to everyone."
+        )
+    return f"Added {what} on PR #{pr_id}"
+
+
 @pr_app.command()
 def comment(  # noqa: PLR0913 — many gh + Bitbucket comment modes on one verb.
     pr_id: Annotated[int | None, typer.Argument(help="PR id (default: current branch).")] = None,
@@ -647,6 +663,14 @@ def comment(  # noqa: PLR0913 — many gh + Bitbucket comment modes on one verb.
     unresolve_id: Annotated[
         int | None, typer.Option("--unresolve", help="Unresolve a thread.")
     ] = None,
+    pending: Annotated[
+        bool,
+        typer.Option(
+            "--pending",
+            help="Save as a pending review comment, visible only to you until you "
+            "finish the review in Bitbucket.",
+        ),
+    ] = False,
     repo: RepoOpt = None,
 ) -> None:
     """Comment on a PR: top-level, inline (--file/--line), reply (--reply-to), or manage."""
@@ -654,6 +678,9 @@ def comment(  # noqa: PLR0913 — many gh + Bitbucket comment modes on one verb.
     ref = resolve_repo(repo)
     if not _one_action(delete_id, resolve_id, unresolve_id, edit_id):
         msg = "Pass at most one of --edit/--delete/--resolve/--unresolve."
+        raise BjError(msg)
+    if pending and not _one_action(pending, delete_id, resolve_id, unresolve_id, edit_id):
+        msg = "--pending only applies to new comments, not --edit/--delete/--resolve/--unresolve."
         raise BjError(msg)
     if (file is None) != (line is None):
         msg = "Inline comments need both --file and --line."
@@ -681,9 +708,11 @@ def comment(  # noqa: PLR0913 — many gh + Bitbucket comment modes on one verb.
             if edit_id is not None:
                 await client.update_pr_comment(ws, slug, resolved, edit_id, text)
                 return f"Edited comment {edit_id} on PR #{resolved}"
-            await client.add_pr_comment(ws, slug, resolved, text, inline=inline, parent_id=reply_to)
+            created = await client.add_pr_comment(
+                ws, slug, resolved, text, inline=inline, parent_id=reply_to, pending=pending
+            )
             what = "inline comment" if inline else "reply" if reply_to else "comment"
-            return f"Added {what} on PR #{resolved}"
+            return _added_comment_message(created, what, resolved, pending=pending)
 
     success(run_with_status("Working…", _run()))
 
