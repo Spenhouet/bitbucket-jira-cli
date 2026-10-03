@@ -112,7 +112,8 @@ export BJ_JIRA_TOKEN=...        # Jira API token
 - `--json` emits the whole raw Bitbucket/Jira response. There is no `gh`-style
   field list; filter with `--jq` instead.
 - `bj api` calls the Bitbucket or Jira REST API (`--backend bitbucket|jira`),
-  not a GraphQL endpoint.
+  not a GraphQL endpoint. Jira paths can be short (`/myself`, relative to
+  `/rest/api/3`) or full as in the Jira docs (`/rest/api/3/myself`).
 - A failed auth check exits `1` (a normal failure), where `gh` uses `4`.
 
 ## Branch-key automation
