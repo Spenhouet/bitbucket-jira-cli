@@ -211,8 +211,19 @@ def view(
         render_issue(issue, comment_list)
 
 
+def _parent_ref(value: str) -> dict[str, str]:
+    """Jira's ``parent`` field value for an issue key or a numeric issue id."""
+    ref = value.strip()
+    if ref.isdigit():
+        return {"id": ref}
+    if not _ISSUE_KEY_RE.match(ref):
+        msg = f"--parent must be an issue key like PROJ-1, got '{value}'."
+        raise BjError(msg)
+    return {"key": ref.upper()}
+
+
 @issue_app.command()
-def create(
+def create(  # noqa: PLR0913 - one flag per Jira create field, like `gh issue create`.
     project: Annotated[str | None, typer.Option("--project", "-p", help="Project key.")] = None,
     issue_type: Annotated[str, typer.Option("--type", "-t", help="Issue type.")] = "Task",
     summary: Annotated[str | None, typer.Option("--summary", "-s", help="Summary/title.")] = None,
@@ -223,10 +234,20 @@ def create(
     ] = None,
     label: Annotated[list[str] | None, typer.Option("--label", "-l", help="Label.")] = None,
     priority: Annotated[str | None, typer.Option("--priority", help="Priority name.")] = None,
+    parent: Annotated[
+        str | None,
+        typer.Option(
+            "--parent",
+            help="Parent issue key (or id): the epic, or the parent of a sub-task.",
+        ),
+    ] = None,
     as_json: JsonOpt = False,
     jq: JqOpt = None,
 ) -> None:
-    """Create a Jira issue."""
+    """Create a Jira issue.
+
+    Sub-task types need --parent, since Jira rejects them without one.
+    """
     config = load_config()
     proj = require_input(project, flag="--project", label="Project key")
     final_summary = require_input(summary, flag="--summary", label="Summary")
@@ -242,6 +263,8 @@ def create(
         fields["priority"] = {"name": priority}
     if label:
         fields["labels"] = [ll.removeprefix("+") for ll in label]
+    if parent:
+        fields["parent"] = _parent_ref(parent)
 
     async def _run() -> dict[str, Any]:
         async with jira_client(config) as client:

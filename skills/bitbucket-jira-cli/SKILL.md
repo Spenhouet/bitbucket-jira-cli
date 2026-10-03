@@ -147,6 +147,7 @@ bj pr merge --squash --delete-branch --yes
 bj issue list --assignee me --json
 bj issue view PROJ-42 --json
 bj issue create --project PROJ --type Bug --summary "..." --body "..."
+bj issue create --project PROJ --type Subtask --parent PROJ-42 --summary "..."
 bj issue edit PROJ-42 --body "$(cat body.md)"   # replace the description
 bj issue edit PROJ-42 --field "Story Points=3"
 bj issue comment PROJ-42 --body "..."
@@ -179,8 +180,16 @@ bj pipeline run --branch main
 bj issue create --project PROJ --type Task --summary "..." --body "$(cat body.md)"
 ```
 
-- Set the epic or parent with a bare issue key. An explicit `{"key": "PROJ-1"}`
-  or a numeric issue id works too:
+- Sub-tasks need their parent at creation time, so pass `--parent` to
+  `issue create` (Jira rejects a sub-task without one). It also puts a story or
+  task under an epic in the same call:
+
+```bash
+bj issue create --project PROJ --type Subtask --parent PROJ-42 --summary "..."
+```
+
+- On an existing issue, set the epic or parent with a bare issue key. An explicit
+  `{"key": "PROJ-1"}` or a numeric issue id works too:
 
 ```bash
 bj issue edit PROJ-42 --field Parent=PROJ-1
