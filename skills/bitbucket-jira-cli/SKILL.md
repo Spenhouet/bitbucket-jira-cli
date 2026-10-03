@@ -114,6 +114,10 @@ export BJ_JIRA_TOKEN=...        # Jira API token
 - `bj api` calls the Bitbucket or Jira REST API (`--backend bitbucket|jira`),
   not a GraphQL endpoint. Jira paths can be short (`/myself`, relative to
   `/rest/api/3`) or full as in the Jira docs (`/rest/api/3/myself`).
+- `bj search code` and `bj search issues` take gh-style filter flags and turn
+  them into Bitbucket search modifiers (`lang:`, `ext:`, `path:`, `repo:`) or
+  JQL. On `bj search`, the workspace flag is `-W`; `-w` is `--web` as in `gh`.
+  There is no `search commits` or `search prs` (no Bitbucket API for it).
 - A failed auth check exits `1` (a normal failure), where `gh` uses `4`.
 
 ## Branch-key automation
