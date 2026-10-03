@@ -24,6 +24,7 @@ bj issue create [OPTIONS]
 | `-a, --assignee <text>` | Assignee (name/email, or 'me'). |
 | `-l, --label <text>` | Label. |
 | `--priority <text>` | Priority name. |
+| `--parent <text>` | Parent issue key (or id): the epic, or the parent of a sub-task. |
 | `--json` | Output raw JSON. |
 | `-q, --jq <text>` | Filter JSON with a jq expression. |
 
@@ -31,6 +32,12 @@ bj issue create [OPTIONS]
 
 ```bash
 bj issue create --project PROJ --type Bug --summary "Login is broken"
+
+# A sub-task needs its parent at creation time
+bj issue create --project PROJ --type Subtask --parent PROJ-42 --summary "Add tests"
+
+# A story under an epic
+bj issue create --project PROJ --type Story --parent PROJ-10 --summary "Login page"
 ```
 
 ## See also
