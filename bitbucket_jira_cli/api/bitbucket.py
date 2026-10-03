@@ -498,7 +498,12 @@ class BitbucketClient(BaseAsyncClient):
     ) -> list[dict[str, Any]]:
         return await self._paginate(
             f"/workspaces/{workspace}/search/code",
-            params={"search_query": query, "pagelen": min(limit, 50)},
+            # The repository is left out of each hit unless asked for explicitly.
+            params={
+                "search_query": query,
+                "pagelen": min(limit, 50),
+                "fields": "+values.file.commit.repository",
+            },
             limit=limit,
         )
 
