@@ -181,11 +181,13 @@ class JiraClient(BaseAsyncClient):
         await self.request("DELETE", f"/version/{version_id}")
 
     # -- agile boards / sprints (project-planning analog) ------------------
+    def _root(self) -> str:
+        """Site root the REST base hangs off: the site host or the gateway prefix."""
+        return str(self._client.base_url).rstrip("/").removesuffix("/rest/api/3")
+
     def _agile(self, path: str) -> str:
         """Absolute URL for the Jira Software agile API (sibling of /rest/api/3)."""
-        root = str(self._client.base_url).rstrip("/")
-        root = root.removesuffix("/rest/api/3")
-        return f"{root}/rest/agile/1.0{path}"
+        return f"{self._root()}/rest/agile/1.0{path}"
 
     async def list_boards(self, *, project: str | None = None) -> list[dict[str, Any]]:
         params = {"projectKeyOrId": project} if project else None
@@ -197,10 +199,25 @@ class JiraClient(BaseAsyncClient):
         return data.get("values", [])
 
     # -- generic passthrough (bj api) --------------------------------------
+    def _raw_url(self, path: str) -> str:
+        """Resolve a `bj api` path against the configured Jira base.
+
+        Short paths (``/myself``) stay relative to ``/rest/api/3``. Full REST paths
+        as the Jira docs write them (``/rest/api/3/myself``, ``rest/agile/1.0/board``)
+        go against the site root instead, so the prefix isn't doubled. That matters
+        most in gateway mode, where the doubled path fails as a 401 "scope does not
+        match" rather than a 404.
+        """
+        stripped = path.lstrip("/")
+        if stripped.startswith("rest/"):
+            return f"{self._root()}/{stripped}"
+        return path
+
     async def raw(
         self, method: str, path: str, *, params: dict[str, Any] | None = None, json: Any = None
     ) -> Any:
-        response = await self.request(method, path, params=params, json=json)
+        url = self._raw_url(path)
+        response = await self.request(method, url, params=params, json=json)
         try:
             return response.json()
         except ValueError:
