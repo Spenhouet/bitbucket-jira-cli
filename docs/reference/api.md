@@ -36,6 +36,8 @@ Make an authenticated request against the Bitbucket or Jira REST API and print t
 ```bash
 bj api /repositories/{workspace}/{repo_slug}/pullrequests
 bj api --backend jira /myself
+# Full REST paths from the Jira docs work too
+bj api --backend jira /rest/api/3/project/PROJ
 bj api --backend jira -X POST /issue/PROJ-42/comment -f body=hi
 ```
 
