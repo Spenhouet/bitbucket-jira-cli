@@ -142,6 +142,7 @@ bj pr view --json | jq '.title'
 bj pr diff
 bj pr review --approve                 # or --request-changes --body "..."
 bj pr comment --body "..."             # add --file/--line for inline
+bj pr comment --body "..." --pending   # draft, published via "Finish review" in the web UI
 bj pr merge --squash --delete-branch --yes
 
 # Issues (Jira)
