@@ -215,6 +215,12 @@ EXAMPLES: dict[str, list[str]] = {
     ],
     "issue create": [
         'bj issue create --project PROJ --type Bug --summary "Login is broken"',
+        "",
+        "# A sub-task needs its parent at creation time",
+        'bj issue create --project PROJ --type Subtask --parent PROJ-42 --summary "Add tests"',
+        "",
+        "# A story under an epic",
+        'bj issue create --project PROJ --type Story --parent PROJ-10 --summary "Login page"',
     ],
     "issue transition": [
         "# List available transitions",
