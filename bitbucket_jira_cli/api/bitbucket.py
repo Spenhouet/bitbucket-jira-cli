@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from typing import Any
 from urllib.parse import quote
 
 from bitbucket_jira_cli.api.base import BaseAsyncClient
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 BASE_URL = "https://api.bitbucket.org/2.0"
 
@@ -57,6 +61,7 @@ class BitbucketClient(BaseAsyncClient):
         state: str | None = None,
         source_branch: str | None = None,
         query: str | None = None,
+        sort: str | None = None,
         limit: int = 30,
     ) -> list[dict[str, Any]]:
         clauses = []
@@ -69,7 +74,30 @@ class BitbucketClient(BaseAsyncClient):
         params: dict[str, Any] = {"pagelen": min(limit, 50)}
         if clauses:
             params["q"] = " AND ".join(clauses)
+        if sort:
+            params["sort"] = sort
         return await self._paginate(self._pr_base(workspace, repo_slug), params=params, limit=limit)
+
+    async def list_user_prs(
+        self,
+        workspace: str,
+        selected_user: str,
+        *,
+        query: str | None = None,
+        sort: str | None = None,
+        limit: int = 30,
+    ) -> list[dict[str, Any]]:
+        """Pull requests authored by a user across every repository of a workspace."""
+        params: dict[str, Any] = {"pagelen": min(limit, 50)}
+        if query:
+            params["q"] = query
+        if sort:
+            params["sort"] = sort
+        return await self._paginate(
+            f"/workspaces/{workspace}/pullrequests/{quote(selected_user)}",
+            params=params,
+            limit=limit,
+        )
 
     async def get_pr(self, workspace: str, repo_slug: str, pr_id: int) -> dict[str, Any]:
         return await self.get_json(f"{self._pr_base(workspace, repo_slug)}/{pr_id}")
@@ -492,13 +520,34 @@ class BitbucketClient(BaseAsyncClient):
     async def delete_ssh_key(self, selected_user: str, key_uuid: str) -> None:
         await self.request("DELETE", f"{self._ssh_base(selected_user)}/{quote(key_uuid)}")
 
+    # -- commits ------------------------------------------------------------
+    async def iter_commits(
+        self, workspace: str, repo_slug: str, *, revision: str | None = None
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Yield commits newest first, one page at a time, so callers can stop early."""
+        url: str | None = f"/repositories/{workspace}/{repo_slug}/commits"
+        if revision:
+            url = f"{url}/{quote(revision, safe='')}"
+        params: dict[str, Any] | None = {"pagelen": 100}
+        while url:
+            payload = await self.get_json(url, params=params)
+            for commit in payload.get("values", []):
+                yield commit
+            url = payload.get("next")
+            params = None  # `next` is an absolute URL with its own query
+
     # -- search -------------------------------------------------------------
     async def search_code(
         self, workspace: str, query: str, *, limit: int = 30
     ) -> list[dict[str, Any]]:
         return await self._paginate(
             f"/workspaces/{workspace}/search/code",
-            params={"search_query": query, "pagelen": min(limit, 50)},
+            # The repository is left out of each hit unless asked for explicitly.
+            params={
+                "search_query": query,
+                "pagelen": min(limit, 50),
+                "fields": "+values.file.commit.repository",
+            },
             limit=limit,
         )
 

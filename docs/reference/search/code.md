@@ -22,7 +22,11 @@ bj search code [OPTIONS] QUERY
 
 | Option | Description |
 | --- | --- |
-| `-w, --workspace <text>` | Workspace (default: configured). |
+| `-W, --workspace <text>` | Workspace (default: configured). |
+| `-R, --repo <text>` | Restrict to a repository (REPO or WORKSPACE/REPO). |
+| `--language <text>` | Restrict to a language (lang:). |
+| `--extension <text>` | Restrict to a file extension (ext:). |
+| `--path, --filename <text>` | Restrict to a path or file name (path:). |
 | `-L, --limit <integer>` | Max results. _(default: 30)_ |
 | `--json` | Output raw JSON. |
 | `-q, --jq <text>` | Filter JSON with a jq expression. |

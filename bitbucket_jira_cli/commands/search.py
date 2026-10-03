@@ -1,21 +1,34 @@
-"""`bj search` - search Bitbucket repositories/code and Jira issues."""
+"""`bj search` - search Bitbucket repositories, code, pull requests, commits and Jira issues."""
 
 from __future__ import annotations
 
+import asyncio
+import re
+import webbrowser
+from datetime import date
+from datetime import datetime
 from typing import Annotated
 from typing import Any
+from typing import Literal
+from urllib.parse import quote
+from urllib.parse import urlparse
 
 import typer
+from rich.markup import escape
 
 from bitbucket_jira_cli.api.bitbucket import BitbucketClient
 from bitbucket_jira_cli.commands._common import emit
+from bitbucket_jira_cli.commands._common import resolve_repo
 from bitbucket_jira_cli.commands._common import resolve_workspace
 from bitbucket_jira_cli.config import Config
 from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.context import bitbucket_authorization
 from bitbucket_jira_cli.context import jira_client
+from bitbucket_jira_cli.errors import BjError
 from bitbucket_jira_cli.interaction import run_with_status
+from bitbucket_jira_cli.render import render_commit_list
 from bitbucket_jira_cli.render import render_issue_list
+from bitbucket_jira_cli.render import render_pr_search_list
 from bitbucket_jira_cli.render import render_repo_list
 from bitbucket_jira_cli.ui import console
 
@@ -23,14 +36,37 @@ search_app = typer.Typer(help="Search Bitbucket and Jira.", no_args_is_help=True
 
 JsonOpt = Annotated[bool, typer.Option("--json", help="Output raw JSON.")]
 JqOpt = Annotated[str | None, typer.Option("--jq", "-q", help="Filter JSON with a jq expression.")]
+# `-w` is `--web` everywhere else (as in gh), so the workspace uses `-W` like `bj webhook`.
 WsOpt = Annotated[
-    str | None, typer.Option("--workspace", "-w", help="Workspace (default: configured).")
+    str | None, typer.Option("--workspace", "-W", help="Workspace (default: configured).")
 ]
 LimitOpt = Annotated[int, typer.Option("--limit", "-L", help="Max results.")]
+RepoOpt = Annotated[
+    str | None,
+    typer.Option("--repo", "-R", help="Restrict to a repository (REPO or WORKSPACE/REPO)."),
+]
+# Requests in flight at once when a search fans out over every repository.
+_FAN_OUT = 8
 
 
 def _bb(config: Config) -> BitbucketClient:
     return BitbucketClient(bitbucket_authorization(config))
+
+
+def _quoted(value: str) -> str:
+    """A double-quoted string literal for JQL or Bitbucket's BBQL."""
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def _split_repo(repo: str | None, workspace: str | None) -> tuple[str | None, str | None]:
+    """Split ``--repo`` (REPO or WORKSPACE/REPO) into (workspace, repo slug)."""
+    if not repo or "/" not in repo:
+        return workspace, repo
+    if repo.count("/") != 1:
+        msg = "--repo must be REPO or WORKSPACE/REPO."
+        raise BjError(msg)
+    repo_ws, slug = repo.split("/", 1)
+    return workspace or repo_ws, slug
 
 
 @search_app.command()
@@ -54,46 +90,413 @@ def repos(
         render_repo_list(results)
 
 
+def _code_query(
+    query: str,
+    *,
+    repo: str | None,
+    language: str | None,
+    extension: str | None,
+    path: str | None,
+) -> str:
+    """Append gh-style filter flags to the query as Bitbucket search modifiers."""
+    parts = [query]
+    if repo:
+        parts.append(f"repo:{repo}")
+    if language:
+        parts.append(f"lang:{language}")
+    if extension:
+        parts.append(f"ext:{extension.lstrip('.')}")
+    if path:
+        parts.append(f"path:{path}")
+    return " ".join(parts)
+
+
+def _hit_repo(hit: dict[str, Any]) -> str:
+    """Repository full name of a code search hit.
+
+    Falls back to the file's API link when the response has no repository object.
+    """
+    file_info = hit.get("file", {})
+    name = file_info.get("commit", {}).get("repository", {}).get("full_name")
+    if name:
+        return str(name)
+    href = file_info.get("links", {}).get("self", {}).get("href", "")
+    match = re.search(r"/repositories/([^/]+)/([^/]+)/", urlparse(href).path)
+    return f"{match.group(1)}/{match.group(2)}" if match else ""
+
+
+def _match_lines(hit: dict[str, Any]) -> list[tuple[int, str]]:
+    """The matching lines of a hit as (line number, Rich markup) pairs."""
+    lines: list[tuple[int, str]] = []
+    for content in hit.get("content_matches", []):
+        for line in content.get("lines", []):
+            segments = line.get("segments", [])
+            if not any(seg.get("match") for seg in segments):
+                continue
+            text = "".join(
+                f"[bold yellow]{escape(seg.get('text', ''))}[/bold yellow]"
+                if seg.get("match")
+                else escape(seg.get("text", ""))
+                for seg in segments
+            )
+            lines.append((int(line.get("line", 0)), text.strip()))
+    return lines
+
+
+def render_code_hits(results: list[dict[str, Any]]) -> None:
+    if not results:
+        console.print("[dim]No matches.[/dim]")
+        return
+    for hit in results:
+        repo = _hit_repo(hit)
+        path = hit.get("file", {}).get("path", "")
+        console.print(f"[cyan]{escape(repo)}[/cyan] {escape(path)}")
+        for number, text in _match_lines(hit):
+            console.print(f"  [dim]{number}:[/dim] {text}")
+
+
 @search_app.command()
 def code(
     query: Annotated[str, typer.Argument(help="Code search query.")],
     workspace: WsOpt = None,
+    repo: RepoOpt = None,
+    language: Annotated[
+        str | None, typer.Option("--language", help="Restrict to a language (lang:).")
+    ] = None,
+    extension: Annotated[
+        str | None, typer.Option("--extension", help="Restrict to a file extension (ext:).")
+    ] = None,
+    path: Annotated[
+        str | None,
+        typer.Option("--path", "--filename", help="Restrict to a path or file name (path:)."),
+    ] = None,
     limit: LimitOpt = 30,
     as_json: JsonOpt = False,
     jq: JqOpt = None,
 ) -> None:
-    """Search code across a workspace."""
+    """Search code across a workspace.
+
+    The filter flags are added to the query as Bitbucket search modifiers, so
+    `--language sql` is the same as writing `lang:sql` in the query.
+    """
     config = load_config()
+    workspace, repo = _split_repo(repo, workspace)
+    ws = resolve_workspace(workspace, config.bitbucket.workspace)
+    search_query = _code_query(query, repo=repo, language=language, extension=extension, path=path)
+
+    async def _run() -> list[dict[str, Any]]:
+        async with _bb(config) as client:
+            return await client.search_code(ws, search_query, limit=limit)
+
+    results = run_with_status("Searching code…", _run())
+    if not emit(results, as_json=as_json, jq=jq):
+        render_code_hits(results)
+
+
+# -- pull requests ----------------------------------------------------------
+PrState = Literal["open", "merged", "declined", "superseded", "all"]
+
+
+def _prs_bbql(
+    query: str | None,
+    *,
+    state: PrState,
+    author: str | None,
+    base: str | None,
+    head: str | None,
+) -> str:
+    """Build the BBQL filter for a pull request search."""
+    clauses: list[str] = []
+    if query:
+        text = _quoted(query)
+        clauses.append(f"(title ~ {text} OR description ~ {text})")
+    if state == "all":
+        states = ("OPEN", "MERGED", "DECLINED", "SUPERSEDED")
+        clauses.append("(" + " OR ".join(f'state = "{st}"' for st in states) + ")")
+    else:
+        clauses.append(f'state = "{state.upper()}"')
+    if author:
+        field = "author.uuid" if author.startswith("{") else "author.account_id"
+        clauses.append(f"{field} = {_quoted(author)}")
+    if base:
+        clauses.append(f"destination.branch.name = {_quoted(base)}")
+    if head:
+        clauses.append(f"source.branch.name = {_quoted(head)}")
+    return " AND ".join(clauses)
+
+
+async def _search_prs(
+    client: BitbucketClient,
+    workspace: str,
+    *,
+    query: str | None,
+    state: PrState,
+    author: str | None,
+    repo: str | None,
+    base: str | None,
+    head: str | None,
+    limit: int,
+) -> list[dict[str, Any]]:
+    if author in ("@me", "me"):
+        author = str((await client.current_user()).get("uuid", ""))
+    sort = "-updated_on"
+    if author and not repo:
+        # One call covers every repository when the author is known.
+        bbql = _prs_bbql(query, state=state, author=None, base=base, head=head)
+        return await client.list_user_prs(workspace, author, query=bbql, sort=sort, limit=limit)
+    bbql = _prs_bbql(query, state=state, author=author, base=base, head=head)
+    if repo:
+        return await client.list_prs(workspace, repo, query=bbql, sort=sort, limit=limit)
+    # No workspace-wide endpoint without an author: query each repository.
+    repos = await client.list_repos(workspace, limit=10_000)
+    gate = asyncio.Semaphore(_FAN_OUT)
+
+    async def one(slug: str) -> list[dict[str, Any]]:
+        async with gate:
+            return await client.list_prs(workspace, slug, query=bbql, sort=sort, limit=limit)
+
+    batches = await asyncio.gather(*(one(str(r.get("slug", ""))) for r in repos))
+    found = [pr for batch in batches for pr in batch]
+    found.sort(key=lambda pr: str(pr.get("updated_on", "")), reverse=True)
+    return found[:limit]
+
+
+@search_app.command()
+def prs(
+    query: Annotated[
+        str | None, typer.Argument(help="Text to match in the title or description.")
+    ] = None,
+    workspace: WsOpt = None,
+    repo: RepoOpt = None,
+    author: Annotated[
+        str | None,
+        typer.Option("--author", help="Filter by author (@me, account ID or {UUID})."),
+    ] = None,
+    state: Annotated[PrState, typer.Option("--state", "-s", help="Filter by state.")] = "all",
+    base: Annotated[
+        str | None, typer.Option("--base", "-B", help="Filter by destination branch.")
+    ] = None,
+    head: Annotated[
+        str | None, typer.Option("--head", "-H", help="Filter by source branch.")
+    ] = None,
+    limit: LimitOpt = 30,
+    as_json: JsonOpt = False,
+    jq: JqOpt = None,
+) -> None:
+    """Search pull requests across a workspace.
+
+    With --author this is a single request. Without it, Bitbucket has no
+    workspace-wide endpoint, so every repository is queried, which takes longer
+    in large workspaces. Narrow it with --repo when you can.
+    """
+    config = load_config()
+    workspace, repo = _split_repo(repo, workspace)
     ws = resolve_workspace(workspace, config.bitbucket.workspace)
 
     async def _run() -> list[dict[str, Any]]:
         async with _bb(config) as client:
-            return await client.search_code(ws, query, limit=limit)
+            return await _search_prs(
+                client,
+                ws,
+                query=query,
+                state=state,
+                author=author,
+                repo=repo,
+                base=base,
+                head=head,
+                limit=limit,
+            )
 
-    results = run_with_status("Searching code…", _run())
-    if emit(results, as_json=as_json, jq=jq):
-        return
-    if not results:
-        console.print("[dim]No matches.[/dim]")
-    for hit in results:
-        file_info = hit.get("file", {})
-        repo = file_info.get("commit", {}).get("repository", {}).get("full_name", "")
-        console.print(f"[cyan]{repo}[/cyan] {file_info.get('path', '')}")
+    results = run_with_status("Searching pull requests…", _run())
+    if not emit(results, as_json=as_json, jq=jq):
+        render_pr_search_list(results)
+
+
+# -- commits ----------------------------------------------------------------
+def _commit_matches(
+    commit: dict[str, Any], *, query: str | None, author: str | None, me: str | None
+) -> bool:
+    if query and query.lower() not in str(commit.get("message", "")).lower():
+        return False
+    if not author:
+        return True
+    info = commit.get("author", {})
+    user = info.get("user", {})
+    if me:
+        return user.get("uuid") == me
+    needle = author.lower()
+    fields = (info.get("raw"), user.get("display_name"), user.get("nickname"))
+    ids = (user.get("uuid"), user.get("account_id"))
+    return any(needle in str(f or "").lower() for f in fields) or author in ids
+
+
+def _commit_date(commit: dict[str, Any]) -> date | None:
+    try:
+        return datetime.fromisoformat(str(commit.get("date", ""))).date()
+    except ValueError:
+        return None
 
 
 @search_app.command()
-def issues(
-    jql: Annotated[str, typer.Argument(help="JQL query.")],
+def commits(
+    query: Annotated[
+        str | None, typer.Argument(help="Text to match in the commit message.")
+    ] = None,
+    repo: Annotated[
+        str | None,
+        typer.Option("--repo", "-R", help="WORKSPACE/REPO or REPO (default: current repo)."),
+    ] = None,
+    workspace: WsOpt = None,
+    author: Annotated[
+        str | None,
+        typer.Option("--author", help="Filter by author (@me, name, email or account ID)."),
+    ] = None,
+    branch: Annotated[
+        str | None, typer.Option("--branch", "-b", help="Branch or ref to search.")
+    ] = None,
+    since: Annotated[
+        datetime | None,
+        typer.Option("--since", help="Stop at commits older than this date.", formats=["%Y-%m-%d"]),
+    ] = None,
     limit: LimitOpt = 30,
     as_json: JsonOpt = False,
     jq: JqOpt = None,
 ) -> None:
-    """Search Jira issues with JQL."""
+    """Search commit messages in one repository.
+
+    Bitbucket cannot filter commits on the server, so bj reads the history
+    newest first and matches it locally. Use --since to bound the scan of a
+    long history.
+    """
     config = load_config()
+    if repo and "/" not in repo:
+        ref_ws, slug = resolve_workspace(workspace, config.bitbucket.workspace), repo
+    else:
+        ref = resolve_repo(repo)
+        ref_ws, slug = ref.workspace, ref.repo_slug
+    cutoff = since.date() if since else None
+
+    async def _run() -> list[dict[str, Any]]:
+        found: list[dict[str, Any]] = []
+        async with _bb(config) as client:
+            me = None
+            if author in ("@me", "me"):
+                me = str((await client.current_user()).get("uuid", ""))
+            async for commit in client.iter_commits(ref_ws, slug, revision=branch):
+                day = _commit_date(commit)
+                if cutoff and day and day < cutoff:
+                    break
+                if _commit_matches(commit, query=query, author=author, me=me):
+                    found.append(commit)
+                    if len(found) >= limit:
+                        break
+        return found
+
+    results = run_with_status("Searching commits…", _run())
+    if not emit(results, as_json=as_json, jq=jq):
+        render_commit_list(results)
+
+
+_ORDER_BY = re.compile(r"\s+order\s+by\s+", re.IGNORECASE)
+
+
+def _split_order_by(jql: str | None) -> tuple[str, str]:
+    """Split a JQL query into its filter and its ORDER BY clause (with a default)."""
+    parts = _ORDER_BY.split((jql or "").strip(), maxsplit=1)
+    order = f"ORDER BY {parts[1].strip()}" if len(parts) > 1 else "ORDER BY updated DESC"
+    return parts[0].strip(), order
+
+
+def _issues_jql(
+    jql: str | None,
+    *,
+    assignee: str | None,
+    author: str | None,
+    state: Literal["open", "closed"] | None,
+    project: str | None,
+    issue_type: str | None,
+    labels: list[str] | None,
+) -> str:
+    """Combine an optional JQL query with gh-style filter flags into one query."""
+    where, order = _split_order_by(jql)
+    clauses = [f"({where})"] if where else []
+    if project:
+        clauses.append(f"project = {_quoted(project)}")
+    if issue_type:
+        clauses.append(f"issuetype = {_quoted(issue_type)}")
+    for who, field in ((assignee, "assignee"), (author, "reporter")):
+        if who:
+            clauses.append(
+                f"{field} = currentUser()" if who in ("@me", "me") else f"{field} = {_quoted(who)}"
+            )
+    if state == "open":
+        clauses.append("statusCategory != Done")
+    elif state == "closed":
+        clauses.append("statusCategory = Done")
+    clauses.extend(f"labels = {_quoted(label)}" for label in labels or [])
+    if not clauses:
+        # `/search/jql` rejects unbounded queries.
+        msg = "Give a JQL query or at least one filter flag (e.g. --assignee @me)."
+        raise BjError(msg)
+    return f"{' AND '.join(clauses)} {order}"
+
+
+@search_app.command()
+def issues(  # noqa: PLR0913 - mirrors the filter flags of `gh search issues`.
+    jql: Annotated[str | None, typer.Argument(help="JQL query (optional with filters).")] = None,
+    assignee: Annotated[
+        str | None, typer.Option("--assignee", help="Filter by assignee (accountId or @me).")
+    ] = None,
+    author: Annotated[
+        str | None, typer.Option("--author", help="Filter by reporter (accountId or @me).")
+    ] = None,
+    state: Annotated[
+        Literal["open", "closed"] | None,
+        typer.Option("--state", "-s", help="Filter by state (Jira status category)."),
+    ] = None,
+    project: Annotated[
+        str | None, typer.Option("--project", "-p", help="Filter by project key.")
+    ] = None,
+    issue_type: Annotated[
+        str | None, typer.Option("--type", "-t", help="Filter by issue type.")
+    ] = None,
+    label: Annotated[
+        list[str] | None, typer.Option("--label", "-l", help="Filter by label (repeatable).")
+    ] = None,
+    web: Annotated[
+        bool, typer.Option("--web", "-w", help="Open the search in the browser.")
+    ] = False,
+    limit: LimitOpt = 30,
+    as_json: JsonOpt = False,
+    jq: JqOpt = None,
+) -> None:
+    """Search Jira issues with JQL and/or gh-style filter flags.
+
+    Filter flags are joined to the JQL query with AND.
+    """
+    config = load_config()
+    query = _issues_jql(
+        jql,
+        assignee=assignee,
+        author=author,
+        state=state,
+        project=project,
+        issue_type=issue_type,
+        labels=label,
+    )
+    if web:
+        site = (config.jira.site or "").rstrip("/")
+        if not site:
+            msg = "Jira site not configured. Run `bj auth login`."
+            raise BjError(msg)
+        url = f"{site}/issues/?jql={quote(query)}"
+        webbrowser.open(url)
+        console.print(f"[dim]Opening {url}[/dim]")
+        return
 
     async def _run() -> list[dict[str, Any]]:
         async with jira_client(config) as client:
-            return await client.search(jql, limit=limit)
+            return await client.search(query, limit=limit)
 
     results = run_with_status("Searching issues…", _run())
     if not emit(results, as_json=as_json, jq=jq):
