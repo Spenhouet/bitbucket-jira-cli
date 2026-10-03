@@ -142,12 +142,13 @@ DESCRIPTIONS: dict[str, str] = {
         "(e.g. `bitbucket.workspace`). Values are validated against the schema."
     ),
     "search": (
-        "Search Bitbucket repositories and code and Jira issues (JQL). Filter flags "
-        "such as `--language` or `--assignee` are turned into Bitbucket search "
-        "modifiers or JQL for you. Bitbucket has no workspace-wide search API for "
-        "commits or pull requests, so there is no `search commits` or `search prs`; "
-        "use `bj pr list` per repository. Jira issue search is also available as "
-        "`bj issue list --jql`."
+        "Search Bitbucket repositories, code, pull requests and commits, and Jira "
+        "issues (JQL). Filter flags such as `--language` or `--assignee` are turned "
+        "into Bitbucket search modifiers, BBQL or JQL for you. `search prs` covers "
+        "the whole workspace in one request with `--author`; without it, every "
+        "repository is queried. `search commits` works on one repository, since "
+        "Bitbucket cannot filter commits on the server. Jira issue search is also "
+        "available as `bj issue list --jql`."
     ),
     "status": (
         "A dashboard of what needs your attention: open Jira issues assigned to "
@@ -294,6 +295,17 @@ EXAMPLES: dict[str, list[str]] = {
         "bj search issues \"project = PROJ AND status = 'In Progress'\"",
         "bj search issues --assignee @me --state open --label backend",
         "bj search issues -p PROJ --web",
+    ],
+    "search prs": [
+        "# Your merged PRs across the workspace (one request)",
+        "bj search prs cache --author @me --state merged",
+        "",
+        "# Open PRs into main in every repository",
+        "bj search prs --state open --base main",
+    ],
+    "search commits": [
+        'bj search commits "fix cache" --repo myteam/api',
+        "bj search commits --author @me --since 2026-01-01",
     ],
     "webhook create": [
         "# Subscribe the current repo to pushes and PR events",

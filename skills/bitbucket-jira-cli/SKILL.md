@@ -117,7 +117,9 @@ export BJ_JIRA_TOKEN=...        # Jira API token
 - `bj search code` and `bj search issues` take gh-style filter flags and turn
   them into Bitbucket search modifiers (`lang:`, `ext:`, `path:`, `repo:`) or
   JQL. On `bj search`, the workspace flag is `-W`; `-w` is `--web` as in `gh`.
-  There is no `search commits` or `search prs` (no Bitbucket API for it).
+  `bj search prs` without `--author` queries every repository, so it is slower
+  in big workspaces. `bj search commits` covers one repository (default: the
+  current one) and scans its history locally; bound it with `--since`.
 - A failed auth check exits `1` (a normal failure), where `gh` uses `4`.
 
 ## Branch-key automation

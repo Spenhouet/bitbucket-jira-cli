@@ -189,6 +189,8 @@ nav:
           - Overview: reference/search/index.md
           - repos: reference/search/repos.md
           - code: reference/search/code.md
+          - prs: reference/search/prs.md
+          - commits: reference/search/commits.md
           - issues: reference/search/issues.md
       - bj status: reference/status.md
       - bj config:
