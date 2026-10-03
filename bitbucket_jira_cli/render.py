@@ -95,9 +95,11 @@ def _render_comment_threads(comments: list[dict[str, Any]]) -> None:
         # The list endpoint returns resolution={} (empty, falsy) when resolved and
         # null when not — so test for presence, not truthiness.
         resolved = " [green](resolved)[/green]" if comment.get("resolution") is not None else ""
+        pending = " [yellow](pending)[/yellow]" if comment.get("pending") else ""
         body = comment.get("content", {}).get("raw", "")
         indent = "  " * depth
-        console.print(f"{indent}[cyan]{who}[/cyan] [dim]#{cid}[/dim]{loc}{resolved}: {body}")
+        tags = f"{loc}{resolved}{pending}"
+        console.print(f"{indent}[cyan]{who}[/cyan] [dim]#{cid}[/dim]{tags}: {body}")
         for child in children.get(cid, []):
             render_one(child, depth + 1)
 
