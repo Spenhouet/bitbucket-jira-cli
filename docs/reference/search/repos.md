@@ -22,7 +22,7 @@ bj search repos [OPTIONS] QUERY
 
 | Option | Description |
 | --- | --- |
-| `-w, --workspace <text>` | Workspace (default: configured). |
+| `-W, --workspace <text>` | Workspace (default: configured). |
 | `-L, --limit <integer>` | Max results. _(default: 30)_ |
 | `--json` | Output raw JSON. |
 | `-q, --jq <text>` | Filter JSON with a jq expression. |
@@ -31,8 +31,11 @@ bj search repos [OPTIONS] QUERY
 
 ```bash
 bj search repos api --workspace myteam
-bj search code "TODO" --workspace myteam
+bj search code "TODO" --workspace myteam --language python
+bj search code "TODO" --repo myteam/api --filename "src/*"
 bj search issues "project = PROJ AND status = 'In Progress'"
+bj search issues --assignee @me --state open --label backend
+bj search issues -p PROJ --web
 ```
 
 ## See also

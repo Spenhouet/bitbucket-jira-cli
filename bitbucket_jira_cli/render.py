@@ -49,6 +49,28 @@ def render_pr_list(prs: list[dict[str, Any]]) -> None:
     console.print(table)
 
 
+def render_pr_search_list(prs: list[dict[str, Any]]) -> None:
+    """Like render_pr_list, with a repository column for results across repos."""
+    if not prs:
+        console.print("[dim]No pull requests found.[/dim]")
+        return
+    table = Table(box=None, pad_edge=False)
+    table.add_column("Repo", style="cyan")
+    table.add_column("ID", justify="right", style="cyan")
+    table.add_column("Title")
+    table.add_column("State")
+    table.add_column("Updated", style="dim")
+    for pr in prs:
+        table.add_row(
+            str(pr.get("destination", {}).get("repository", {}).get("full_name", "")),
+            str(pr.get("id", "")),
+            pr_row_title(pr),
+            _state(str(pr.get("state", "")), _PR_STATE_COLORS),
+            relative_time(pr.get("updated_on")),
+        )
+    console.print(table)
+
+
 def render_pr(pr: dict[str, Any], comments: list[dict[str, Any]] | None = None) -> None:
     author = pr.get("author", {}).get("display_name", "?")
     src = pr.get("source", {}).get("branch", {}).get("name", "?")
@@ -322,3 +344,25 @@ def render_pipeline(pipeline: dict[str, Any], steps: list[dict[str, Any]] | None
         console.print("\n[bold]Steps[/bold]")
         for step in steps:
             console.print(f"  {_pipeline_status(step)} {step.get('name', '(unnamed)')}")
+
+
+# -- commits ----------------------------------------------------------------
+def render_commit_list(commits: list[dict[str, Any]]) -> None:
+    if not commits:
+        console.print("[dim]No commits found.[/dim]")
+        return
+    table = Table(box=None, pad_edge=False)
+    table.add_column("Commit", style="cyan")
+    table.add_column("Message")
+    table.add_column("Author", style="dim")
+    table.add_column("Date", style="dim")
+    for commit in commits:
+        author = commit.get("author", {})
+        name = author.get("user", {}).get("display_name") or author.get("raw", "")
+        table.add_row(
+            str(commit.get("hash", ""))[:8],
+            str(commit.get("message", "")).split("\n", 1)[0],
+            str(name),
+            relative_time(commit.get("date")),
+        )
+    console.print(table)
