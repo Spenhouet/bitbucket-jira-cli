@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
+import sys
 import webbrowser
+from pathlib import Path
 from typing import Annotated
 from typing import Any
 
@@ -81,6 +84,20 @@ def browse(
     _emit_url(f"https://bitbucket.org/{ref}", no_browser=no_browser)
 
 
+def _read_input(source: str) -> Any:
+    """Read a JSON request body from a file, or from stdin when ``source`` is ``-``."""
+    try:
+        text = sys.stdin.read() if source == "-" else Path(source).read_text(encoding="utf-8")
+    except OSError as exc:
+        msg = f"Cannot read --input '{source}': {exc.strerror}."
+        raise BjError(msg) from exc
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as exc:
+        msg = f"--input must be JSON: {exc.msg} (line {exc.lineno}, column {exc.colno})."
+        raise BjError(msg) from exc
+
+
 def api(
     path: Annotated[str, typer.Argument(help="API path, e.g. /repositories/{ws}/{repo}.")],
     backend: Annotated[
@@ -89,6 +106,13 @@ def api(
     method: Annotated[str, typer.Option("--method", "-X", help="HTTP method.")] = "GET",
     field: Annotated[
         list[str] | None, typer.Option("--field", "-f", help="key=value parameter (repeatable).")
+    ] = None,
+    input_file: Annotated[
+        str | None,
+        typer.Option(
+            "--input",
+            help="JSON request body from a file ('-' for stdin). Fields then go to the query.",
+        ),
     ] = None,
     jq: Annotated[str | None, typer.Option("--jq", "-q", help="Filter JSON with jq.")] = None,
 ) -> None:
@@ -103,7 +127,11 @@ def api(
         fields[k] = v
     upper = method.upper()
     params = fields if upper == "GET" and fields else None
-    json_body: dict[str, Any] | None = fields if upper != "GET" and fields else None
+    json_body: Any = fields if upper != "GET" and fields else None
+    if input_file is not None:
+        # Like `gh api --input`: the file is the body, so fields go to the query string.
+        json_body = _read_input(input_file)
+        params = fields or None
 
     async def _run() -> None:
         client = jira_client(config) if backend == "jira" else bitbucket_client(config)
