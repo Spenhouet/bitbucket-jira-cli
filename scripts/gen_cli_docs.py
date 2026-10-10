@@ -108,7 +108,9 @@ DESCRIPTIONS: dict[str, str] = {
     "api": (
         "Make an authenticated request against the Bitbucket or Jira REST API and "
         "print the JSON response. Choose the backend with `--backend`; `--field` "
-        "adds parameters (query string for GET, JSON body otherwise)."
+        "adds parameters (query string for GET, JSON body otherwise). For a nested "
+        "JSON body, pass it with `--input <file>` (`-` reads stdin), as with "
+        "`gh api --input`; `--field` values then go to the query string."
     ),
     "browse": (
         "Open the repository, the current branch's pull request, or the branch's "
@@ -347,6 +349,9 @@ EXAMPLES: dict[str, list[str]] = {
         "# Full REST paths from the Jira docs work too",
         "bj api --backend jira /rest/api/3/project/PROJ",
         "bj api --backend jira -X POST /issue/PROJ-42/comment -f body=hi",
+        "# Send a nested JSON body from a file or stdin",
+        "bj api --backend jira -X PUT /issue/PROJ-42 --input body.json",
+        "jq -c . body.json | bj api -b jira -X PUT /issue/PROJ-42 --input -",
     ],
 }
 
