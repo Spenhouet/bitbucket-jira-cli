@@ -31,6 +31,7 @@ bj <command> [OPTIONS]
 | --- | --- |
 | [`bj release`](release/index.md) | Manage Jira project versions (releases). |
 | [`bj board`](board/index.md) | Work with Jira boards and sprints (needs an unscoped Jira token). |
+| [`bj automation`](automation/index.md) | Manage Jira automation rules (needs an unscoped Jira token). |
 
 ## Pipelines
 
