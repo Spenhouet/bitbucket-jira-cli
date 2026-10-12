@@ -36,7 +36,7 @@ SHORT_OPT_LEN = 2  # a short flag is like "-t"
 # Command grouping on the reference landing page (mirrors gh's Core/Actions/…).
 GROUPS: list[tuple[str, list[str]]] = [
     ("Core commands", ["auth", "repo", "pr", "issue"]),
-    ("Jira planning", ["release", "board"]),
+    ("Jira planning", ["release", "board", "automation"]),
     ("Pipelines", ["pipeline", "variable"]),
     ("Search and status", ["search", "status"]),
     ("Configuration", ["config", "alias", "ssh-key"]),
@@ -133,6 +133,17 @@ DESCRIPTIONS: dict[str, str] = {
         "Jira project versions, the analog of GitHub releases. A version is a "
         "named milestone that issues target with their fix version and that you "
         "eventually mark released."
+    ),
+    "automation": (
+        "Jira automation rules. They live behind the Jira Automation REST API "
+        "(`api.atlassian.com/automation/public/jira/{cloudId}/rest/v1`), not the "
+        "platform API, and `bj` resolves the cloudId from the site for you. The "
+        "rule endpoints need a Jira administrator, and Atlassian documents only "
+        "**unscoped** API tokens for this API: a scoped token gets `401 scope does "
+        "not match`. If your login uses a scoped token, set `BJ_JIRA_TOKEN` to an "
+        "unscoped one for these commands. `export` and `import` copy a rule: "
+        "`import` drops the source rule's UUID, timestamps and component ids and "
+        "creates the rule disabled unless you pass `--enable`."
     ),
     "variable": (
         "Bitbucket Pipelines variables. Bitbucket models secrets and plaintext "
@@ -281,6 +292,19 @@ EXAMPLES: dict[str, list[str]] = {
         "bj release list --project PROJ",
         "bj release create 1.2.0 --project PROJ --release-date 2026-01-31",
         "bj release release 10000",
+    ],
+    "automation list": [
+        "bj automation list --project PROJ --state enabled",
+        "bj automation list --json | jq -r '.[] | [.uuid, .name] | @tsv'",
+    ],
+    "automation import": [
+        "# Copy a rule: export, change it with jq, import it as a new rule",
+        "bj automation export 0192e5ac-0e25-71de-ba7b-d972e6a2049a -o weekly.json",
+        "jq '.rule.description = \"Runs once a year\"' weekly.json > yearly.json",
+        'bj automation import yearly.json --name "Yearly check"',
+    ],
+    "automation disable": [
+        "bj automation disable 0192e5ac-0e25-71de-ba7b-d972e6a2049a",
     ],
     "variable set": [
         "bj variable set DEPLOY_ENV production",

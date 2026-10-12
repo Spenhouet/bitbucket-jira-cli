@@ -102,6 +102,7 @@ export BJ_JIRA_TOKEN=...        # Jira API token
 | `gh status` | `bj status` |
 | `gh project` | `bj board` (Jira boards/sprints) |
 | `gh webhook` (extension) | `bj webhook` (full CRUD; no `forward`) |
+| (none) | `bj automation` (Jira automation rules) |
 
 ## Differences from `gh`
 
@@ -122,6 +123,11 @@ export BJ_JIRA_TOKEN=...        # Jira API token
   `bj search prs` without `--author` queries every repository, so it is slower
   in big workspaces. `bj search commits` covers one repository (default: the
   current one) and scans its history locally; bound it with `--since`.
+- `bj automation` manages Jira automation rules (`list`, `view`, `enable`,
+  `disable`, `export`, `import`, `delete`). The Automation API needs an unscoped
+  Jira token and a Jira admin; with a scoped login, set `BJ_JIRA_TOKEN` to an
+  unscoped token. Copy a rule with `export`, edit the JSON, then `import`
+  (created disabled unless `--enable`).
 - A failed auth check exits `1` (a normal failure), where `gh` uses `4`.
 
 ## Branch-key automation
