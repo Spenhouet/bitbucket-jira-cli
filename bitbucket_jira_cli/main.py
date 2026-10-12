@@ -11,6 +11,7 @@ import typer
 from bitbucket_jira_cli import __version__
 from bitbucket_jira_cli.auth.commands import auth_app
 from bitbucket_jira_cli.commands.alias import alias_app
+from bitbucket_jira_cli.commands.automation import automation_app
 from bitbucket_jira_cli.commands.board import board_app
 from bitbucket_jira_cli.commands.config import config_app
 from bitbucket_jira_cli.commands.issue import issue_app
@@ -54,6 +55,7 @@ app.add_typer(snippet_app, name="snippet")
 app.add_typer(ruleset_app, name="ruleset")
 app.add_typer(webhook_app, name="webhook")
 app.add_typer(board_app, name="board")
+app.add_typer(automation_app, name="automation")
 app.add_typer(alias_app, name="alias")
 app.command(name="browse")(browse)
 app.command(name="api")(api)
