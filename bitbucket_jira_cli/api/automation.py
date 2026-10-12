@@ -178,4 +178,6 @@ class AutomationClient(BaseAsyncClient):
         await self.request("PUT", f"/rule/{uuid}/state", json={"value": state})
 
     async def delete_rule(self, uuid: str) -> None:
-        await self.request("DELETE", f"/rule/{uuid}")
+        # The Automation API answers 415 to a DELETE without a JSON content type,
+        # although the request has no body.
+        await self.request("DELETE", f"/rule/{uuid}", headers={"Content-Type": "application/json"})
