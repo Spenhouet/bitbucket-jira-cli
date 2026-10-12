@@ -231,6 +231,7 @@ def test_create_and_delete_requests() -> None:
     assert json.loads(seen[0].content) == {"rule": {"name": "x"}}
     assert seen[1].method == "DELETE"
     assert seen[1].url.path.endswith("/rest/v1/rule/u-1")
+    assert seen[1].headers["Content-Type"] == "application/json"
 
 
 def test_scope_error_explains_token_type() -> None:
