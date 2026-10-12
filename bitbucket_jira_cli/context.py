@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from bitbucket_jira_cli.api.automation import AutomationClient
+from bitbucket_jira_cli.api.automation import automation_base
 from bitbucket_jira_cli.api.bitbucket import BitbucketClient
 from bitbucket_jira_cli.api.jira import JiraClient
+from bitbucket_jira_cli.api.jira import fetch_cloud_id
 from bitbucket_jira_cli.auth.store import basic_header
 from bitbucket_jira_cli.auth.store import get_token
 from bitbucket_jira_cli.errors import AuthError
@@ -55,7 +58,7 @@ def jira_browse_url(config: Config, key: str) -> str | None:
     return f"{site}/browse/{key}" if site else None
 
 
-def jira_client(config: Config) -> JiraClient:
+def jira_authorization(config: Config) -> str:
     token = get_token("jira")
     if not token:
         msg = "Not logged in to Jira. Run `bj auth login`."
@@ -64,7 +67,32 @@ def jira_client(config: Config) -> JiraClient:
     if not email:
         msg = "Jira email is not configured. Run `bj auth login`."
         raise AuthError(msg)
-    return JiraClient(jira_rest_base(config), basic_header(email, token))
+    return basic_header(email, token)
+
+
+def jira_client(config: Config) -> JiraClient:
+    return JiraClient(jira_rest_base(config), jira_authorization(config))
+
+
+async def jira_cloud_id(config: Config) -> str:
+    """The site's cloudId: from config (gateway mode) or the site's tenant_info."""
+    if config.jira.cloud_id:
+        return config.jira.cloud_id
+    if not config.jira.site:
+        msg = "Jira site is not configured. Run `bj auth login`."
+        raise AuthError(msg)
+    return await fetch_cloud_id(config.jira.site)
+
+
+async def automation_client(config: Config) -> tuple[AutomationClient, str]:
+    """An Automation API client for the configured site, and the site's cloudId.
+
+    Uses the same Jira credentials in both auth modes; the Automation API always
+    goes through the api.atlassian.com gateway.
+    """
+    authorization = jira_authorization(config)
+    cloud_id = await jira_cloud_id(config)
+    return AutomationClient(automation_base(cloud_id), authorization), cloud_id
 
 
 def jira_client_or_none(config: Config) -> JiraClient | None:
