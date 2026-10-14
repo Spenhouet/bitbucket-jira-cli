@@ -30,7 +30,7 @@ bj pr <command> [OPTIONS]
 | [`checks`](checks.md) | Show the build/commit statuses (CI checks) for a pull request. |
 | [`ready`](ready.md) | Mark a draft pull request as ready for review (or --undo back to draft). |
 | [`reopen`](reopen.md) | Reopen a declined pull request by opening a fresh one from the same branches. |
-| [`task`](task.md) | Manage pull-request tasks (checklist items). |
+| [`task`](task/index.md) | Manage pull-request tasks (checklist items). |
 
 ## See also
 

@@ -14,7 +14,7 @@ bj api [OPTIONS] PATH
 
 ## Description
 
-Make an authenticated request against the Bitbucket or Jira REST API and print the JSON response. Choose the backend with `--backend`; `--field` adds parameters (query string for GET, JSON body otherwise). For a nested JSON body, pass it with `--input <file>` (`-` reads stdin), as with `gh api --input`; `--field` values then go to the query string.
+Make an authenticated request against the Bitbucket or Jira REST API and print the JSON response. Choose the backend with `--backend`; `--field` adds parameters (query string for GET, JSON body otherwise). For a nested JSON body, pass it with `--input <file>` (`-` reads stdin), as with `gh api --input`; `--field` values then go to the query string. A response that is not JSON, such as an image or a file, is written to stdout as raw bytes, like `gh api` does.
 
 ## Arguments
 
@@ -43,6 +43,8 @@ bj api --backend jira -X POST /issue/PROJ-42/comment -f body=hi
 # Send a nested JSON body from a file or stdin
 bj api --backend jira -X PUT /issue/PROJ-42 --input body.json
 jq -c . body.json | bj api -b jira -X PUT /issue/PROJ-42 --input -
+# Non-JSON responses are written as raw bytes
+bj api -b jira /rest/api/3/attachment/content/10001 > file.png
 ```
 
 ## See also
