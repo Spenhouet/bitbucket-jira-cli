@@ -30,6 +30,7 @@ bj issue <command> [OPTIONS]
 | [`develop`](develop.md) | Create a local git branch for an issue (its key drives branch-key automation). |
 | [`delete`](delete.md) | Delete a Jira issue (irreversible). |
 | [`status`](status.md) | Show open Jira issues assigned to you. |
+| [`attachment`](attachment/index.md) | List and download issue attachments. |
 
 ## See also
 

@@ -124,7 +124,11 @@ nav:
           - rename: reference/repo/rename.md
           - file: reference/repo/file.md
           - ls: reference/repo/ls.md
-          - deploy-key: reference/repo/deploy-key.md
+          - deploy-key:
+              - Overview: reference/repo/deploy-key/index.md
+              - list: reference/repo/deploy-key/list.md
+              - add: reference/repo/deploy-key/add.md
+              - delete: reference/repo/deploy-key/delete.md
       - bj pr:
           - Overview: reference/pr/index.md
           - create: reference/pr/create.md
@@ -141,7 +145,14 @@ nav:
           - checks: reference/pr/checks.md
           - ready: reference/pr/ready.md
           - reopen: reference/pr/reopen.md
-          - task: reference/pr/task.md
+          - task:
+              - Overview: reference/pr/task/index.md
+              - list: reference/pr/task/list.md
+              - add: reference/pr/task/add.md
+              - resolve: reference/pr/task/resolve.md
+              - unresolve: reference/pr/task/unresolve.md
+              - edit: reference/pr/task/edit.md
+              - delete: reference/pr/task/delete.md
       - bj issue:
           - Overview: reference/issue/index.md
           - fields: reference/issue/fields.md
@@ -158,6 +169,10 @@ nav:
           - develop: reference/issue/develop.md
           - delete: reference/issue/delete.md
           - status: reference/issue/status.md
+          - attachment:
+              - Overview: reference/issue/attachment/index.md
+              - list: reference/issue/attachment/list.md
+              - download: reference/issue/attachment/download.md
       - bj release:
           - Overview: reference/release/index.md
           - list: reference/release/list.md

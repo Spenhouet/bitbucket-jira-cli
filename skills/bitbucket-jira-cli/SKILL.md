@@ -116,7 +116,9 @@ export BJ_JIRA_TOKEN=...        # Jira API token
   not a GraphQL endpoint. Jira paths can be short (`/myself`, relative to
   `/rest/api/3`) or full as in the Jira docs (`/rest/api/3/myself`).
   Send a nested JSON body with `--input body.json` (or `--input -` for stdin);
-  `--field` only builds flat string values.
+  `--field` only builds flat string values. A response that is not JSON (an
+  image, a file) is written to stdout as raw bytes, as with `gh api`, so
+  redirect it into a file.
 - `bj search code` and `bj search issues` take gh-style filter flags and turn
   them into Bitbucket search modifiers (`lang:`, `ext:`, `path:`, `repo:`) or
   JQL. On `bj search`, the workspace flag is `-W`; `-w` is `--web` as in `gh`.
@@ -173,6 +175,10 @@ bj issue link PROJ-42 PROJ-43 --type blocks    # PROJ-42 blocks PROJ-43
 bj issue link https://example.com/doc   # attach a URL to the branch's issue
 bj issue links PROJ-42                  # linked issues and URLs
 bj issue unlink PROJ-42 PROJ-43         # remove a link
+bj issue attachment list PROJ-42        # attachments with id, name, size, type
+bj issue attachment download PROJ-42    # all attachments into the current dir
+bj issue attachment download PROJ-42 --pattern '*.png' --dir shots
+bj issue attachment download PROJ-42 --id 10001 --output design.png
 
 # Repos and pipelines (Bitbucket)
 bj repo clone WORKSPACE/REPO

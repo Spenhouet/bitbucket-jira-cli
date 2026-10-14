@@ -11,6 +11,7 @@ import typer
 from bitbucket_jira_cli import __version__
 from bitbucket_jira_cli.auth.commands import auth_app
 from bitbucket_jira_cli.commands.alias import alias_app
+from bitbucket_jira_cli.commands.attachment import attachment_app
 from bitbucket_jira_cli.commands.automation import automation_app
 from bitbucket_jira_cli.commands.board import board_app
 from bitbucket_jira_cli.commands.config import config_app
@@ -44,6 +45,7 @@ app.add_typer(auth_app, name="auth")
 app.add_typer(repo_app, name="repo")
 app.add_typer(pr_app, name="pr")
 app.add_typer(issue_app, name="issue")
+issue_app.add_typer(attachment_app, name="attachment")
 app.add_typer(pipeline_app, name="pipeline")
 app.add_typer(skill_app, name="skill")
 app.add_typer(release_app, name="release")
