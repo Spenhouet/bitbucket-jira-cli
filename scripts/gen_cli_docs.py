@@ -105,12 +105,25 @@ DESCRIPTIONS: dict[str, str] = {
         "Remove a link from an issue. The target can be the linked issue's key, "
         "the attached URL, or a link id from `bj issue links`."
     ),
+    "issue attachment list": (
+        "List the files attached to an issue with their id, name, size and type. "
+        "With no key, the key is read from the current git branch."
+    ),
+    "issue attachment download": (
+        "Download files attached to an issue, like `gh release download`. Without "
+        "a filter every attachment is saved into `--dir` under its own name. Pick "
+        "files with `--name`, `--pattern` or `--id`, or write a single file to "
+        "`--output` (`-` writes it to stdout). An existing file stops the download "
+        "unless you pass `--clobber` or `--skip-existing`."
+    ),
     "api": (
         "Make an authenticated request against the Bitbucket or Jira REST API and "
         "print the JSON response. Choose the backend with `--backend`; `--field` "
         "adds parameters (query string for GET, JSON body otherwise). For a nested "
         "JSON body, pass it with `--input <file>` (`-` reads stdin), as with "
-        "`gh api --input`; `--field` values then go to the query string."
+        "`gh api --input`; `--field` values then go to the query string. A "
+        "response that is not JSON, such as an image or a file, is written to "
+        "stdout as raw bytes, like `gh api` does."
     ),
     "browse": (
         "Open the repository, the current branch's pull request, or the branch's "
@@ -277,6 +290,16 @@ EXAMPLES: dict[str, list[str]] = {
         "bj issue unlink PROJ-42 PROJ-43",
         "bj issue unlink PROJ-42 https://example.com/design --yes",
     ],
+    "issue attachment list": [
+        "bj issue attachment list PROJ-42",
+        "bj issue attachment list PROJ-42 --jq '.[].filename'",
+    ],
+    "issue attachment download": [
+        "# Download every attachment into the current directory",
+        "bj issue attachment download PROJ-42",
+        "bj issue attachment download PROJ-42 --pattern '*.png' --dir screenshots",
+        "bj issue attachment download PROJ-42 --id 10001 --output design.png",
+    ],
     "skill install": [
         "# Install for Claude Code in the current repo",
         "bj skill install --agent claude-code",
@@ -376,6 +399,8 @@ EXAMPLES: dict[str, list[str]] = {
         "# Send a nested JSON body from a file or stdin",
         "bj api --backend jira -X PUT /issue/PROJ-42 --input body.json",
         "jq -c . body.json | bj api -b jira -X PUT /issue/PROJ-42 --input -",
+        "# Non-JSON responses are written as raw bytes",
+        "bj api -b jira /rest/api/3/attachment/content/10001 > file.png",
     ],
 }
 
@@ -460,7 +485,7 @@ def _render_examples(key: str) -> str:
 
 
 def _page(path: list[str], cmd: Any, *, is_group: bool,
-          children: list[tuple[str, str]] | None = None) -> str:
+          children: list[tuple[str, str, str]] | None = None) -> str:
     key = " ".join(path)
     label = " ".join(["bj", *path]).strip() or "bj"
     out = [
@@ -483,7 +508,7 @@ def _page(path: list[str], cmd: Any, *, is_group: bool,
         out += ["## Description", "", DESCRIPTIONS[key], ""]
     if is_group and children:
         out += ["## Commands", "", "| Command | Description |", "| --- | --- |"]
-        out += [f"| [`{name}`]({name}.md) | {desc} |" for name, desc in children]
+        out += [f"| [`{name}`]({link}) | {desc} |" for name, desc, link in children]
         out.append("")
     else:
         args, opts = _split_params(cmd)
@@ -545,10 +570,23 @@ def _reference_nav(root: Any) -> list[str]:
             cmd = root.commands[name]
             if _is_group(cmd):
                 lines.append(f"      - bj {name}:")
-                lines.append(f"          - Overview: reference/{name}/index.md")
-                lines += [f"          - {sn}: reference/{name}/{sn}.md" for sn in cmd.commands]
+                lines += _group_nav([name], cmd, indent=10)
             else:
                 lines.append(f"      - bj {name}: reference/{name}.md")
+    return lines
+
+
+def _group_nav(path: list[str], cmd: Any, *, indent: int) -> list[str]:
+    """Nav lines for a group's pages; nested groups get their own sub-section."""
+    pad = " " * indent
+    base = "reference/" + "/".join(path)
+    lines = [f"{pad}- Overview: {base}/index.md"]
+    for sn, sc in cmd.commands.items():
+        if _is_group(sc):
+            lines.append(f"{pad}- {sn}:")
+            lines += _group_nav([*path, sn], sc, indent=indent + 4)
+        else:
+            lines.append(f"{pad}- {sn}: {base}/{sn}.md")
     return lines
 
 
@@ -566,6 +604,21 @@ def _write(rel_path: str, content: str) -> None:
     dest.write_text(content, encoding="utf-8")
 
 
+def _write_group(path: list[str], cmd: Any) -> None:
+    """Write a group's index page and one page per subcommand, nesting subgroups."""
+    folder = "/".join(path)
+    children = [
+        (sn, _one_liner(sc), f"{sn}/index.md" if _is_group(sc) else f"{sn}.md")
+        for sn, sc in cmd.commands.items()
+    ]
+    _write(f"{folder}/index.md", _page(path, cmd, is_group=True, children=children))
+    for sn, sc in cmd.commands.items():
+        if _is_group(sc):
+            _write_group([*path, sn], sc)
+        else:
+            _write(f"{folder}/{sn}.md", _page([*path, sn], sc, is_group=False))
+
+
 def main() -> None:
     if OUT_DIR.exists():
         shutil.rmtree(OUT_DIR)
@@ -577,10 +630,7 @@ def main() -> None:
     for name in [n for _, names in GROUPS for n in names]:
         cmd = root.commands[name]
         if _is_group(cmd):
-            children = [(sn, _one_liner(sc)) for sn, sc in cmd.commands.items()]
-            _write(f"{name}/index.md", _page([name], cmd, is_group=True, children=children))
-            for sn, sc in cmd.commands.items():
-                _write(f"{name}/{sn}.md", _page([name, sn], sc, is_group=False))
+            _write_group([name], cmd)
         else:
             _write(f"{name}.md", _page([name], cmd, is_group=False))
 

@@ -27,7 +27,7 @@ bj repo <command> [OPTIONS]
 | [`rename`](rename.md) | Rename a repository. |
 | [`file`](file.md) | Print the contents of a file in the repository. |
 | [`ls`](ls.md) | List files in a repository directory. |
-| [`deploy-key`](deploy-key.md) | Manage repository access/deploy keys. |
+| [`deploy-key`](deploy-key/index.md) | Manage repository access/deploy keys. |
 
 ## See also
 

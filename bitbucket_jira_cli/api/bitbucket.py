@@ -556,10 +556,7 @@ class BitbucketClient(BaseAsyncClient):
         self, method: str, path: str, *, params: dict[str, Any] | None = None, json: Any = None
     ) -> Any:
         response = await self.request(method, path, params=params, json=json)
-        try:
-            return response.json()
-        except ValueError:
-            return response.text
+        return self.raw_body(response)
 
     # -- pagination ---------------------------------------------------------
     async def _paginate(

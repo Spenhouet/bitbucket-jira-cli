@@ -116,7 +116,11 @@ def api(
     ] = None,
     jq: Annotated[str | None, typer.Option("--jq", "-q", help="Filter JSON with jq.")] = None,
 ) -> None:
-    """Make an authenticated request to the Bitbucket or Jira API."""
+    """Make an authenticated request to the Bitbucket or Jira API.
+
+    JSON responses are pretty-printed (or filtered with --jq). Any other response,
+    such as an image or a file, is written to stdout as raw bytes.
+    """
     config = load_config()
     fields: dict[str, str] = {}
     for item in field or []:
@@ -133,16 +137,25 @@ def api(
         json_body = _read_input(input_file)
         params = fields or None
 
-    async def _run() -> None:
+    async def _run() -> Any:
         client = jira_client(config) if backend == "jira" else bitbucket_client(config)
         async with client:
-            data = await client.raw(upper, path, params=params, json=json_body)
-        emit(data, as_json=not jq, jq=jq)
+            return await client.raw(upper, path, params=params, json=json_body)
 
     # Ensure bitbucket_authorization errors surface early with a clean message.
     if backend == "bitbucket":
         bitbucket_authorization(config)
-    run_with_status("Requesting…", _run())
+    data = run_with_status("Requesting…", _run())
+    if isinstance(data, bytes):
+        # Like `gh api`: a body that is not JSON (an image, a file, plain text) is
+        # written to stdout unchanged, so it can be redirected into a file.
+        if jq is not None and data:
+            msg = "--jq needs a JSON response, but the response is not JSON."
+            raise BjError(msg)
+        sys.stdout.buffer.write(data)
+        sys.stdout.buffer.flush()
+        return
+    emit(data, as_json=not jq, jq=jq)
 
 
 def status() -> None:

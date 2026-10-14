@@ -106,3 +106,30 @@ def test_input_missing_file_fails_without_request(fake: FakeClient, tmp_path: Pa
     assert isinstance(result.exception, BjError)
     assert "Cannot read --input" in str(result.exception)
     assert fake.calls == []
+
+
+def test_binary_response_is_written_raw(fake: FakeClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A non-JSON body goes to stdout byte for byte, like `gh api`."""
+    png = b"\x89PNG\r\n\x1a\n\x00\xff"
+
+    async def raw_bytes(*_args: Any, **_kwargs: Any) -> bytes:
+        return png
+
+    monkeypatch.setattr(fake, "raw", raw_bytes)
+    result = runner.invoke(app, ["api", "-b", "jira", "/rest/api/3/attachment/content/1"])
+
+    assert result.exit_code == 0, result.output
+    assert result.stdout_bytes == png
+
+
+def test_jq_on_binary_response_fails(fake: FakeClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """--jq on a non-JSON body is a clear error rather than garbage."""
+
+    async def raw_bytes(*_args: Any, **_kwargs: Any) -> bytes:
+        return b"plain text"
+
+    monkeypatch.setattr(fake, "raw", raw_bytes)
+    result = runner.invoke(app, ["api", "-b", "jira", "/some/text", "--jq", "."])
+
+    assert isinstance(result.exception, BjError)
+    assert "--jq needs a JSON response" in str(result.exception)

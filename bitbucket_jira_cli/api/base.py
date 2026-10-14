@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import BinaryIO
 
 import httpx
 
@@ -95,3 +96,28 @@ class BaseAsyncClient:
     async def get_json(self, url: str, *, params: dict[str, Any] | None = None) -> Any:
         response = await self.request("GET", url, params=params)
         return response.json()
+
+    async def download(self, url: str, sink: BinaryIO) -> int:
+        """Stream a binary response body into ``sink`` and return the byte count.
+
+        Redirects are followed by the underlying client. httpx drops the
+        ``Authorization`` header when a redirect leaves the original host, so a
+        redirect to a separate media host does not receive the credentials.
+        """
+        written = 0
+        async with self._client.stream("GET", url, headers={"Accept": "*/*"}) as response:
+            if response.status_code >= httpx.codes.BAD_REQUEST:
+                await response.aread()
+                self._raise(response)
+            async for chunk in response.aiter_bytes():
+                sink.write(chunk)
+                written += len(chunk)
+        return written
+
+    @staticmethod
+    def raw_body(response: httpx.Response) -> Any:
+        """Decode a `bj api` response: parsed JSON, or the raw bytes for anything else."""
+        try:
+            return response.json()
+        except ValueError:
+            return response.content

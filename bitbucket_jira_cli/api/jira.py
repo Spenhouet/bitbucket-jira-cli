@@ -7,6 +7,7 @@ Bodies (comments, descriptions) are ADF documents — see ``api.adf``.
 from __future__ import annotations
 
 from typing import Any
+from typing import BinaryIO
 
 import httpx
 
@@ -106,6 +107,15 @@ class JiraClient(BaseAsyncClient):
             if not token or len(issues) >= limit:
                 break
         return issues[:limit]
+
+    # -- attachments --------------------------------------------------------
+    async def list_attachments(self, key: str) -> list[dict[str, Any]]:
+        issue = await self.get_issue(key, fields=["attachment"])
+        return issue.get("fields", {}).get("attachment") or []
+
+    async def download_attachment(self, attachment_id: str, sink: BinaryIO) -> int:
+        """Write an attachment's content to ``sink``, following Jira's media redirect."""
+        return await self.download(f"/attachment/content/{attachment_id}", sink)
 
     # -- comments -----------------------------------------------------------
     async def add_comment(self, key: str, adf_body: dict[str, Any]) -> dict[str, Any]:
@@ -218,7 +228,4 @@ class JiraClient(BaseAsyncClient):
     ) -> Any:
         url = self._raw_url(path)
         response = await self.request(method, url, params=params, json=json)
-        try:
-            return response.json()
-        except ValueError:
-            return response.text
+        return self.raw_body(response)
