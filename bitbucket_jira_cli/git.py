@@ -92,7 +92,7 @@ def _remote_url(remote: str = "origin") -> str | None:
 
 
 # git@bitbucket.org:workspace/repo.git  |  ssh://git@bitbucket.org/workspace/repo.git
-# SSH also accepts ssh.bitbucket.org, the dedicated SSH host from November 2026.
+# SSH also accepts ssh.bitbucket.org, the dedicated SSH host.
 # https://bitbucket.org/workspace/repo.git
 _BB_SSH = re.compile(
     r"^(?:git@(?:ssh\.)?bitbucket\.org:|ssh://git@(?:ssh\.)?bitbucket\.org(?::\d+)?/)"
