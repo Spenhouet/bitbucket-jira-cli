@@ -36,6 +36,11 @@ def test_parse_branch_key_disabled() -> None:
     ("url", "ws", "repo"),
     [
         ("git@bitbucket.org:myteam/myrepo.git", "myteam", "myrepo"),
+        ("git@ssh.bitbucket.org:myteam/myrepo.git", "myteam", "myrepo"),
+        ("git@ssh.bitbucket.org:myteam/myrepo", "myteam", "myrepo"),
+        ("ssh://git@bitbucket.org/myteam/myrepo.git", "myteam", "myrepo"),
+        ("ssh://git@ssh.bitbucket.org/myteam/myrepo.git", "myteam", "myrepo"),
+        ("ssh://git@ssh.bitbucket.org:22/myteam/myrepo.git", "myteam", "myrepo"),
         ("https://user@bitbucket.org/myteam/myrepo.git", "myteam", "myrepo"),
         ("https://bitbucket.org/myteam/myrepo", "myteam", "myrepo"),
     ],
@@ -45,3 +50,17 @@ def test_remote_url_parsing(url: str, ws: str, repo: str) -> None:
     assert match is not None
     assert match.group("ws") == ws
     assert match.group("repo") == repo
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "git@github.com:myteam/myrepo.git",
+        "git@ssh.github.com:myteam/myrepo.git",
+        "git@notbitbucket.org:myteam/myrepo.git",
+        "ssh://git@bitbucket.org.example.com/myteam/myrepo.git",
+    ],
+)
+def test_remote_url_parsing_rejects_other_hosts(url: str) -> None:
+    assert _BB_SSH.match(url) is None
+    assert _BB_HTTPS.match(url) is None

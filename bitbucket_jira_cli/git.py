@@ -91,8 +91,13 @@ def _remote_url(remote: str = "origin") -> str | None:
     return _git("remote", "get-url", remote)
 
 
-# git@bitbucket.org:workspace/repo.git  |  https://bitbucket.org/workspace/repo.git
-_BB_SSH = re.compile(r"^git@bitbucket\.org:(?P<ws>[^/]+)/(?P<repo>.+?)(?:\.git)?$")
+# git@bitbucket.org:workspace/repo.git  |  ssh://git@bitbucket.org/workspace/repo.git
+# SSH also accepts ssh.bitbucket.org, the dedicated SSH host from November 2026.
+# https://bitbucket.org/workspace/repo.git
+_BB_SSH = re.compile(
+    r"^(?:git@(?:ssh\.)?bitbucket\.org:|ssh://git@(?:ssh\.)?bitbucket\.org(?::\d+)?/)"
+    r"(?P<ws>[^/]+)/(?P<repo>.+?)(?:\.git)?/?$"
+)
 _BB_HTTPS = re.compile(
     r"^https?://(?:[^@/]+@)?bitbucket\.org/(?P<ws>[^/]+)/(?P<repo>.+?)(?:\.git)?/?$"
 )
