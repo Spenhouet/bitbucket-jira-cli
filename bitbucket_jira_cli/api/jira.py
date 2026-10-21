@@ -199,14 +199,22 @@ class JiraClient(BaseAsyncClient):
         """Absolute URL for the Jira Software agile API (sibling of /rest/api/3)."""
         return f"{self._root()}/rest/agile/1.0{path}"
 
+    async def _agile_values(self, path: str, params: dict[str, Any]) -> list[dict[str, Any]]:
+        """Collect ``values`` across every page of an agile list endpoint."""
+        values: list[dict[str, Any]] = []
+        while True:
+            data = await self.get_json(self._agile(path), params={**params, "startAt": len(values)})
+            page = data.get("values", [])
+            values.extend(page)
+            if data.get("isLast", True) or not page:
+                return values
+
     async def list_boards(self, *, project: str | None = None) -> list[dict[str, Any]]:
-        params = {"projectKeyOrId": project} if project else None
-        data = await self.get_json(self._agile("/board"), params=params)
-        return data.get("values", [])
+        params = {"projectKeyOrId": project} if project else {}
+        return await self._agile_values("/board", params)
 
     async def list_sprints(self, board_id: int) -> list[dict[str, Any]]:
-        data = await self.get_json(self._agile(f"/board/{board_id}/sprint"))
-        return data.get("values", [])
+        return await self._agile_values(f"/board/{board_id}/sprint", {})
 
     # -- generic passthrough (bj api) --------------------------------------
     def _raw_url(self, path: str) -> str:
