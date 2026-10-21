@@ -213,8 +213,11 @@ class JiraClient(BaseAsyncClient):
         params = {"projectKeyOrId": project} if project else {}
         return await self._agile_values("/board", params)
 
-    async def list_sprints(self, board_id: int) -> list[dict[str, Any]]:
-        return await self._agile_values(f"/board/{board_id}/sprint", {})
+    async def list_sprints(
+        self, board_id: int, *, state: str | None = None
+    ) -> list[dict[str, Any]]:
+        params = {"state": state} if state else {}
+        return await self._agile_values(f"/board/{board_id}/sprint", params)
 
     # -- generic passthrough (bj api) --------------------------------------
     def _raw_url(self, path: str) -> str:
