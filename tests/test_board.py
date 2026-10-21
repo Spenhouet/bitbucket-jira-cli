@@ -3,9 +3,17 @@
 from typing import Any
 
 import httpx
+import pytest
+from typer.testing import CliRunner
 
 from bitbucket_jira_cli._async import run
 from bitbucket_jira_cli.api.jira import JiraClient
+from bitbucket_jira_cli.commands import board as board_cmd
+from bitbucket_jira_cli.config import Config
+from bitbucket_jira_cli.config import JiraConfig
+from bitbucket_jira_cli.main import app
+
+runner = CliRunner()
 
 SITE = "https://ex.atlassian.net/rest/api/3"
 
@@ -82,3 +90,33 @@ def test_empty_page_without_is_last_stops() -> None:
             return await client.list_sprints(7)
 
     assert run(_go()) == []
+
+
+def test_list_sprints_passes_state_filter() -> None:
+    seen: list[httpx.Request] = []
+
+    async def _go() -> list[dict[str, Any]]:
+        async with _client(1, seen) as client:
+            return await client.list_sprints(7, state="active,future")
+
+    run(_go())
+    assert seen[0].url.params["state"] == "active,future"
+
+
+def test_list_sprints_without_state_sends_no_filter() -> None:
+    seen: list[httpx.Request] = []
+    run(_sprints(1, seen))
+    assert "state" not in seen[0].url.params
+
+
+def test_sprints_command_forwards_state(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: list[httpx.Request] = []
+    config = Config(jira=JiraConfig(site="https://example.atlassian.net"))
+    monkeypatch.setattr(board_cmd, "load_config", lambda: config)
+    monkeypatch.setattr(board_cmd, "jira_client", lambda _config: _client(1, seen))
+
+    result = runner.invoke(app, ["board", "sprints", "7", "--state", "active"])
+
+    assert result.exit_code == 0, result.output
+    assert seen[0].url.params["state"] == "active"
+    assert "Item 0" in result.output

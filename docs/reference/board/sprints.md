@@ -22,6 +22,7 @@ bj board sprints [OPTIONS] BOARD_ID
 
 | Option | Description |
 | --- | --- |
+| `-s, --state <text>` | Only sprints in these states: active, future, closed (comma-separated). |
 | `--json` | Output raw JSON. |
 | `-q, --jq <text>` | Filter JSON with a jq expression. |
 
