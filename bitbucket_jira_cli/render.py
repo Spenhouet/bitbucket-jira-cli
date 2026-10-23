@@ -2,13 +2,21 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from typing import Any
 
+from rich import box
+from rich.markup import escape
+from rich.style import Style
 from rich.table import Table
+from rich.text import Text
 
 from bitbucket_jira_cli.api.adf import adf_to_text
 from bitbucket_jira_cli.timefmt import relative_time
 from bitbucket_jira_cli.ui import console
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 _PR_STATE_COLORS = {
     "OPEN": "green",
@@ -160,6 +168,43 @@ def render_issue_list(issues: list[dict[str, Any]]) -> None:
             fields.get("summary", ""),
             relative_time(fields.get("updated")),
         )
+    console.print(table)
+
+
+def _board_card(issue: dict[str, Any], link: Callable[[str], str | None]) -> Text:
+    fields = issue.get("fields", {})
+    key = issue.get("key", "")
+    key_style = Style(color="cyan", link=link(key))
+    card = Text.assemble((key, key_style), " ", fields.get("summary", ""))
+    assignee = (fields.get("assignee") or {}).get("displayName")
+    if assignee:
+        card.append(f"\n{assignee}", style="dim")
+    return card
+
+
+def _board_header(column: dict[str, Any]) -> Text:
+    count = len(column["issues"])
+    wip_max = column.get("max")
+    if wip_max is None:
+        return Text(f"{column['name']} ({count})")
+    style = "red" if count > wip_max else ""
+    return Text(f"{column['name']} ({count}/{wip_max})", style=style)
+
+
+def render_board(
+    title: str,
+    columns: list[dict[str, Any]],
+    link: Callable[[str], str | None] = lambda _key: None,
+) -> None:
+    """Draw a board as side-by-side columns of issue cards, like the Jira board view."""
+    console.print(f"[bold]{escape(title)}[/bold]")
+    if not columns:
+        console.print("[dim]Board has no columns.[/dim]")
+        return
+    table = Table(box=box.SIMPLE_HEAD, expand=True, pad_edge=False)
+    for column in columns:
+        table.add_column(_board_header(column), ratio=1, overflow="fold")
+    table.add_row(*(Text("\n\n").join(_board_card(i, link) for i in c["issues"]) for c in columns))
     console.print(table)
 
 
