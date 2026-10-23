@@ -22,6 +22,7 @@ Jira Software boards and sprints, the closest analog to GitHub Projects. This us
 | --- | --- |
 | [`list`](list.md) | List Jira boards. |
 | [`sprints`](sprints.md) | List a board's sprints. |
+| [`view`](view.md) | Show a board as columns of issues, like the Jira board view. |
 
 ## See also
 

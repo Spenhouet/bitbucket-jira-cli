@@ -219,6 +219,40 @@ class JiraClient(BaseAsyncClient):
         params = {"state": state} if state else {}
         return await self._agile_values(f"/board/{board_id}/sprint", params)
 
+    async def get_board(self, board_id: int) -> dict[str, Any]:
+        return await self.get_json(self._agile(f"/board/{board_id}"))
+
+    async def get_board_configuration(self, board_id: int) -> dict[str, Any]:
+        return await self.get_json(self._agile(f"/board/{board_id}/configuration"))
+
+    async def list_board_issues(
+        self,
+        board_id: int,
+        *,
+        jql: str | None = None,
+        fields: list[str] | None = None,
+        limit: int = 200,
+    ) -> list[dict[str, Any]]:
+        """Issues on a board in board rank order, paged up to ``limit``."""
+        params: dict[str, Any] = {}
+        if jql:
+            params["jql"] = jql
+        if fields:
+            params["fields"] = ",".join(fields)
+        issues: list[dict[str, Any]] = []
+        while len(issues) < limit:
+            page_params = {
+                **params,
+                "startAt": len(issues),
+                "maxResults": min(limit - len(issues), 100),
+            }
+            data = await self.get_json(self._agile(f"/board/{board_id}/issue"), params=page_params)
+            page = data.get("issues", [])
+            issues.extend(page)
+            if not page or len(issues) >= data.get("total", 0):
+                break
+        return issues[:limit]
+
     # -- generic passthrough (bj api) --------------------------------------
     def _raw_url(self, path: str) -> str:
         """Resolve a `bj api` path against the configured Jira base.
