@@ -50,6 +50,14 @@ def list_boards(
 @board_app.command()
 def sprints(
     board_id: Annotated[int, typer.Argument(help="Board id (from `board list`).")],
+    state: Annotated[
+        str | None,
+        typer.Option(
+            "--state",
+            "-s",
+            help="Only sprints in these states: active, future, closed (comma-separated).",
+        ),
+    ] = None,
     as_json: JsonOpt = False,
     jq: JqOpt = None,
 ) -> None:
@@ -58,7 +66,7 @@ def sprints(
 
     async def _run() -> list[dict[str, Any]]:
         async with jira_client(config) as client:
-            return await client.list_sprints(board_id)
+            return await client.list_sprints(board_id, state=state)
 
     sprint_list = run_with_status("Loading sprints…", _run())
     if emit(sprint_list, as_json=as_json, jq=jq):
