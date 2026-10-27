@@ -50,6 +50,7 @@ class JiraConfig(BaseModel):
     # "gateway": scoped token on api.atlassian.com/ex/jira/{cloud_id} (least privilege).
     auth_mode: Literal["site", "gateway"] = "site"
     cloud_id: str | None = None
+    board: int | None = None  # default for `bj board view`
 
 
 class BranchKeyConfig(BaseModel):

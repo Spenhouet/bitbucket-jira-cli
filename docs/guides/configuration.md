@@ -39,6 +39,7 @@ jira:
   email: you@example.com
   auth_mode: site            # site (unscoped) | gateway (scoped API token)
   cloud_id: null             # set automatically in gateway mode
+  board: null                # default board for `bj board view`
 branch_key:
   enabled: true
   pattern: ([A-Za-z][A-Za-z0-9]+-\d+)

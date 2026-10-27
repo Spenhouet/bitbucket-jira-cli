@@ -186,6 +186,7 @@ nav:
           - Overview: reference/board/index.md
           - list: reference/board/list.md
           - sprints: reference/board/sprints.md
+          - view: reference/board/view.md
       - bj automation:
           - Overview: reference/automation/index.md
           - list: reference/automation/list.md

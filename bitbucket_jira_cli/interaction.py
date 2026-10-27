@@ -13,6 +13,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
+from contextlib import nullcontext
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
@@ -28,6 +29,7 @@ from bitbucket_jira_cli.ui import console
 if TYPE_CHECKING:
     from collections.abc import Coroutine
     from collections.abc import Sequence
+    from contextlib import AbstractContextManager
 
 T = TypeVar("T")
 
@@ -111,11 +113,20 @@ def run_with_status(label: str, coro: Coroutine[object, object, T]) -> T:
         return run(coro)
 
 
+def _use_pager() -> bool:
+    pager = os.environ.get("BJ_PAGER", os.environ.get("PAGER"))
+    return sys.stdout.isatty() and pager not in ("", "cat")
+
+
 def page(text: str) -> None:
     """Print long text, through the system pager when interactive."""
-    pager = os.environ.get("BJ_PAGER", os.environ.get("PAGER"))
-    if not sys.stdout.isatty() or pager in ("", "cat"):
+    if not _use_pager():
         sys.stdout.write(text if text.endswith("\n") else text + "\n")
         return
     with console.pager(styles=True):
         console.print(text, highlight=False)
+
+
+def paged() -> AbstractContextManager[object]:
+    """Send rich output printed inside the block through the system pager when interactive."""
+    return console.pager(styles=True, links=True) if _use_pager() else nullcontext()
