@@ -32,6 +32,7 @@ from bitbucket_jira_cli.commands.variable import variable_app
 from bitbucket_jira_cli.commands.webhook import webhook_app
 from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.errors import BjError
+from bitbucket_jira_cli.ui import ensure_safe_output
 from bitbucket_jira_cli.ui import print_error
 
 app = typer.Typer(
@@ -101,6 +102,7 @@ def _expand_alias(argv: list[str]) -> list[str]:
 
 def cli() -> None:
     """Console-script entry point: run the app, print BjErrors cleanly."""
+    ensure_safe_output()
     sys.argv = [sys.argv[0], *_expand_alias(sys.argv[1:])]
     try:
         app()
