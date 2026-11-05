@@ -1,4 +1,4 @@
-"""Tests for `bj issue attachment` and binary downloads through the Jira client."""
+"""Tests for `bj issue attachment` and binary transfers through the Jira client."""
 
 from pathlib import Path
 from typing import Any
@@ -41,6 +41,7 @@ ATTACHMENTS = [
 ]
 
 CONTENT = {"10001": PNG, "10002": b"hello world\n"}
+REFUSED = ApiError("Jira", 403, "You do not have permission to create attachments.")
 
 
 class FakeJira:
@@ -49,6 +50,8 @@ class FakeJira:
     def __init__(self, attachments: list[dict[str, Any]]) -> None:
         self.attachments = attachments
         self.downloaded: list[str] = []
+        self.uploaded: list[str] = []
+        self.refuse: set[str] = set()
 
     async def __aenter__(self) -> "FakeJira":
         return self
@@ -63,6 +66,12 @@ class FakeJira:
         self.downloaded.append(attachment_id)
         sink.write(CONTENT[attachment_id])
         return len(CONTENT[attachment_id])
+
+    async def upload_attachment(self, _key: str, path: Path) -> list[dict[str, Any]]:
+        if path.name in self.refuse:
+            raise REFUSED
+        self.uploaded.append(path.name)
+        return [{"id": str(20000 + len(self.uploaded)), "filename": path.name, "size": 1536}]
 
 
 @pytest.fixture
@@ -150,6 +159,47 @@ def test_list_attachments_reads_the_attachment_field() -> None:
             return await client.list_attachments("PROJ-1")
 
     assert run(_go()) == ATTACHMENTS
+
+
+def test_upload_sends_multipart_file_with_xsrf_header(tmp_path: Path) -> None:
+    """The file goes in the `file` form field and the XSRF check is disabled."""
+    source = tmp_path / "screenshot.png"
+    source.write_bytes(PNG)
+    created = [{"id": "10003", "filename": "screenshot.png", "size": len(PNG)}]
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        request.read()
+        seen.append(request)
+        return httpx.Response(200, json=created)
+
+    async def _go() -> list[dict[str, Any]]:
+        async with _client(handler) as client:
+            return await client.upload_attachment("PROJ-1", source)
+
+    assert run(_go()) == created
+    request = seen[0]
+    assert (request.method, str(request.url)) == ("POST", f"{SITE}/issue/PROJ-1/attachments")
+    assert request.headers["X-Atlassian-Token"] == "no-check"
+    assert request.headers["Content-Type"].startswith("multipart/form-data; boundary=")
+    assert b'name="file"; filename="screenshot.png"' in request.content
+    assert PNG in request.content
+
+
+def test_upload_error_raises_api_error(tmp_path: Path) -> None:
+    """A refused upload maps to an ApiError with Jira's message."""
+    source = tmp_path / "big.bin"
+    source.write_bytes(b"x")
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(413, json={"errorMessages": ["File is too large"]})
+
+    async def _go() -> None:
+        async with _client(handler) as client:
+            await client.upload_attachment("PROJ-1", source)
+
+    with pytest.raises(ApiError, match="File is too large"):
+        run(_go())
 
 
 # -- helpers -------------------------------------------------------------------
@@ -310,3 +360,55 @@ def test_duplicate_names_need_an_id(fake: FakeJira, tmp_path: Path) -> None:
     assert isinstance(result.exception, BjError)
     assert "Several attachments are named 'notes.txt'" in str(result.exception)
     assert fake.downloaded == []
+
+
+def _files(tmp_path: Path, *names: str) -> list[str]:
+    paths = []
+    for name in names:
+        (tmp_path / name).write_bytes(b"data")
+        paths.append(str(tmp_path / name))
+    return paths
+
+
+def test_upload_prints_name_size_and_id(fake: FakeJira, tmp_path: Path) -> None:
+    files = _files(tmp_path, "report.pdf", "build.log")
+    result = runner.invoke(app, ["issue", "attachment", "upload", "proj-1", *files])
+    assert result.exit_code == 0, result.output
+    assert fake.uploaded == ["report.pdf", "build.log"]
+    assert "Uploaded report.pdf (1.5 KiB) as attachment 20001" in result.output
+    assert "Uploaded build.log (1.5 KiB) as attachment 20002" in result.output
+
+
+@pytest.mark.usefixtures("fake")
+def test_upload_json(tmp_path: Path) -> None:
+    files = _files(tmp_path, "report.pdf")
+    result = runner.invoke(
+        app, ["issue", "attachment", "upload", "PROJ-1", *files, "--jq", ".[].id"]
+    )
+    assert result.exit_code == 0, result.output
+    assert result.stdout.strip() == '"20001"'
+
+
+@pytest.mark.parametrize("missing", ["nope.txt", "."])
+def test_upload_rejects_missing_files_and_directories(
+    fake: FakeJira, tmp_path: Path, missing: str
+) -> None:
+    """Paths are checked before anything is sent."""
+    files = _files(tmp_path, "report.pdf")
+    result = runner.invoke(
+        app, ["issue", "attachment", "upload", "PROJ-1", *files, str(tmp_path / missing)]
+    )
+    assert result.exit_code == 2
+    assert "Invalid value for 'FILES...'" in result.output
+    assert fake.uploaded == []
+
+
+def test_refused_upload_names_the_file_and_earlier_uploads(fake: FakeJira, tmp_path: Path) -> None:
+    fake.refuse = {"build.log"}
+    files = _files(tmp_path, "report.pdf", "build.log")
+    result = runner.invoke(app, ["issue", "attachment", "upload", "PROJ-1", *files])
+    assert isinstance(result.exception, BjError)
+    message = str(result.exception)
+    assert f"Could not upload {files[1]} to PROJ-1" in message
+    assert "You do not have permission to create attachments." in message
+    assert "already uploaded: report.pdf" in message

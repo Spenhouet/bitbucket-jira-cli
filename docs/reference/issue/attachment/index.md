@@ -4,7 +4,7 @@ title: bj issue attachment
 
 # bj issue attachment
 
-List and download issue attachments.
+List, download and upload issue attachments.
 
 ## Synopsis
 
@@ -18,6 +18,7 @@ bj issue attachment <command> [OPTIONS]
 | --- | --- |
 | [`list`](list.md) | List the attachments on an issue. |
 | [`download`](download.md) | Download issue attachments (all of them unless filtered). |
+| [`upload`](upload.md) | Attach local files to an issue. |
 
 ## See also
 
