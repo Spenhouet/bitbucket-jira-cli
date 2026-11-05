@@ -6,6 +6,7 @@ Bodies (comments, descriptions) are ADF documents — see ``api.adf``.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import BinaryIO
 
@@ -14,6 +15,9 @@ import httpx
 from bitbucket_jira_cli.api.base import DEFAULT_TIMEOUT
 from bitbucket_jira_cli.api.base import BaseAsyncClient
 from bitbucket_jira_cli.errors import ApiError
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 async def fetch_cloud_id(site: str) -> str:
@@ -116,6 +120,21 @@ class JiraClient(BaseAsyncClient):
     async def download_attachment(self, attachment_id: str, sink: BinaryIO) -> int:
         """Write an attachment's content to ``sink``, following Jira's media redirect."""
         return await self.download(f"/attachment/content/{attachment_id}", sink)
+
+    async def upload_attachment(self, key: str, path: Path) -> list[dict[str, Any]]:
+        """Attach a local file to an issue and return the attachments Jira created.
+
+        Jira reads the file from the ``file`` form field and rejects the upload
+        without the ``X-Atlassian-Token`` header (XSRF protection).
+        """
+        with path.open("rb") as handle:
+            response = await self.request(
+                "POST",
+                f"/issue/{key}/attachments",
+                files={"file": (path.name, handle)},
+                headers={"X-Atlassian-Token": "no-check"},
+            )
+        return response.json()
 
     # -- comments -----------------------------------------------------------
     async def add_comment(self, key: str, adf_body: dict[str, Any]) -> dict[str, Any]:

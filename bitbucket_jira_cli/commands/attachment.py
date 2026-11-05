@@ -1,4 +1,4 @@
-"""`bj issue attachment` - list and download Jira issue attachments."""
+"""`bj issue attachment` - list, download and upload Jira issue attachments."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from bitbucket_jira_cli.commands.issue import JsonOpt
 from bitbucket_jira_cli.commands.issue import _resolve_key
 from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.context import jira_client
+from bitbucket_jira_cli.errors import ApiError
 from bitbucket_jira_cli.errors import BjError
 from bitbucket_jira_cli.interaction import run_with_status
 from bitbucket_jira_cli.timefmt import relative_time
@@ -25,7 +26,9 @@ from bitbucket_jira_cli.ui import console
 from bitbucket_jira_cli.ui import err_console
 from bitbucket_jira_cli.ui import success
 
-attachment_app = typer.Typer(help="List and download issue attachments.", no_args_is_help=True)
+attachment_app = typer.Typer(
+    help="List, download and upload issue attachments.", no_args_is_help=True
+)
 
 KeyArg = Annotated[str | None, typer.Argument(help="Issue key (default: from branch).")]
 
@@ -225,3 +228,40 @@ def download(
     skipped = len(selected) - len(targets)
     if skipped:
         err_console.print(f"[dim]Skipped {skipped} existing file(s).[/dim]")
+
+
+async def _upload(key: str, paths: list[Path]) -> list[dict[str, Any]]:
+    uploaded: list[dict[str, Any]] = []
+    async with jira_client(load_config()) as client:
+        for path in paths:
+            try:
+                uploaded.extend(await client.upload_attachment(key, path))
+            except ApiError as exc:
+                msg = f"Could not upload {path} to {key}: {exc}"
+                if uploaded:
+                    names = ", ".join(str(item.get("filename", "")) for item in uploaded)
+                    msg += f" (already uploaded: {names})"
+                raise BjError(msg) from exc
+    return uploaded
+
+
+@attachment_app.command()
+def upload(
+    key: Annotated[str, typer.Argument(help="Issue key.")],
+    files: Annotated[
+        list[Path],
+        typer.Argument(
+            help="Files to attach.", exists=True, dir_okay=False, readable=True, show_default=False
+        ),
+    ],
+    as_json: JsonOpt = False,
+    jq: JqOpt = None,
+) -> None:
+    """Attach local files to an issue."""
+    resolved = _resolve_key(key, load_config())
+    uploaded = run_with_status("Uploading…", _upload(resolved, files))
+    if emit(uploaded, as_json=as_json, jq=jq):
+        return
+    for item in uploaded:
+        size = human_size(int(item.get("size") or 0))
+        success(f"Uploaded {item.get('filename')} ({size}) as attachment {item.get('id')}")

@@ -116,6 +116,12 @@ DESCRIPTIONS: dict[str, str] = {
         "`--output` (`-` writes it to stdout). An existing file stops the download "
         "unless you pass `--clobber` or `--skip-existing`."
     ),
+    "issue attachment upload": (
+        "Attach local files to an issue, like `gh release upload`. Each file is "
+        "uploaded on its own, and bj prints its name, size and the new attachment id. "
+        "Every path is checked before the first upload. If Jira refuses a file, the "
+        "error names it and lists the files that were already uploaded."
+    ),
     "api": (
         "Make an authenticated request against the Bitbucket or Jira REST API and "
         "print the JSON response. Choose the backend with `--backend`; `--field` "
@@ -299,6 +305,10 @@ EXAMPLES: dict[str, list[str]] = {
         "bj issue attachment download PROJ-42",
         "bj issue attachment download PROJ-42 --pattern '*.png' --dir screenshots",
         "bj issue attachment download PROJ-42 --id 10001 --output design.png",
+    ],
+    "issue attachment upload": [
+        "bj issue attachment upload PROJ-42 screenshot.png",
+        "bj issue attachment upload PROJ-42 build.log report.pdf --jq '.[].id'",
     ],
     "skill install": [
         "# Install for Claude Code in the current repo",

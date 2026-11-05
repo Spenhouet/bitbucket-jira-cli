@@ -179,6 +179,7 @@ bj issue attachment list PROJ-42        # attachments with id, name, size, type
 bj issue attachment download PROJ-42    # all attachments into the current dir
 bj issue attachment download PROJ-42 --pattern '*.png' --dir shots
 bj issue attachment download PROJ-42 --id 10001 --output design.png
+bj issue attachment upload PROJ-42 build.log shot.png   # attach local files
 
 # Repos and pipelines (Bitbucket)
 bj repo clone WORKSPACE/REPO
