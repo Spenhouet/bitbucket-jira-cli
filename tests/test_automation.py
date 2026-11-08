@@ -13,6 +13,7 @@ from bitbucket_jira_cli._async import run
 from bitbucket_jira_cli.api.automation import AutomationClient
 from bitbucket_jira_cli.api.automation import automation_base
 from bitbucket_jira_cli.api.automation import rule_create_payload
+from bitbucket_jira_cli.api.automation import rule_update_payload
 from bitbucket_jira_cli.commands import automation as automation_cmd
 from bitbucket_jira_cli.config import Config
 from bitbucket_jira_cli.errors import ApiError
@@ -132,6 +133,46 @@ def test_create_payload_rejects_non_rule() -> None:
         rule_create_payload({"foo": "bar"})
 
 
+# -- update payload ---------------------------------------------------------
+
+UUID = EXPORTED["rule"]["uuid"]
+
+
+def test_update_payload_keeps_component_ids_and_state() -> None:
+    """Component ids stay so the API updates them in place; uuid and timestamps go."""
+    payload = rule_update_payload(EXPORTED, UUID)
+    rule = payload["rule"]
+    assert {"uuid", "created", "updated"} & rule.keys() == set()
+    assert rule["trigger"]["id"] == "1"
+    child = rule["components"][0]["children"][0]
+    assert (child["id"], child["parentId"], child["conditionParentId"]) == ("3", "2", "2")
+    assert rule["state"] == "ENABLED"
+    assert payload["connections"][0] == {
+        "id": "conn-1",
+        "accountId": "abc",
+        "connectionTargetKey": "key",
+        "targetConfigJson": "{}",
+        "authType": "OAUTH",
+    }
+    assert EXPORTED["rule"]["uuid"] == UUID
+
+
+def test_update_payload_accepts_bare_rule_without_uuid() -> None:
+    """A bare rule object without a uuid is fine."""
+    bare = {k: v for k, v in EXPORTED["rule"].items() if k != "uuid"}
+    payload = rule_update_payload(bare, UUID)
+    assert payload["rule"]["name"] == "Weekly check"
+    assert "connections" not in payload
+
+
+def test_update_payload_rejects_other_rule() -> None:
+    """A definition exported from another rule is refused."""
+    with pytest.raises(ValueError, match="not other-uuid"):
+        rule_update_payload(EXPORTED, "other-uuid")
+    with pytest.raises(ValueError, match="not a rule definition"):
+        rule_update_payload({"foo": "bar"}, UUID)
+
+
 # -- client against a mock transport ------------------------------------------
 
 
@@ -234,6 +275,27 @@ def test_create_and_delete_requests() -> None:
     assert seen[1].headers["Content-Type"] == "application/json"
 
 
+def test_update_puts_rule() -> None:
+    """Update sends the payload with PUT /rule/{uuid}."""
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json={"ruleUuid": "u-1"})
+
+    updated = run(_call(handler, "update_rule", "u-1", {"rule": {"name": "x"}}))
+    assert updated == {"ruleUuid": "u-1"}
+    assert seen[0].method == "PUT"
+    assert seen[0].url.path.endswith("/rest/v1/rule/u-1")
+    assert json.loads(seen[0].content) == {"rule": {"name": "x"}}
+
+
+def test_update_without_response_body() -> None:
+    """An empty 200 still reports the rule uuid."""
+    updated = run(_call(lambda _r: httpx.Response(200), "update_rule", "u-1", {"rule": {}}))
+    assert updated == {"ruleUuid": "u-1"}
+
+
 def test_scope_error_explains_token_type() -> None:
     """A 401 'scope does not match' points at the token type."""
 
@@ -312,6 +374,10 @@ class FakeAutomation:
     async def create_rule(self, payload: dict[str, Any]) -> dict[str, Any]:
         self.calls.append(("create", payload))
         return {"ruleUuid": "new-uuid"}
+
+    async def update_rule(self, uuid: str, payload: dict[str, Any]) -> dict[str, Any]:
+        self.calls.append(("update", (uuid, payload)))
+        return {"ruleUuid": uuid}
 
     async def delete_rule(self, uuid: str) -> None:
         self.calls.append(("delete", uuid))
@@ -415,3 +481,40 @@ def test_delete_with_yes(fake: FakeAutomation) -> None:
     result = runner.invoke(app, ["automation", "delete", "u-1", "--yes"])
     assert result.exit_code == 0, result.output
     assert fake.calls == [("delete", "u-1")]
+
+
+def test_export_then_update_in_place(fake: FakeAutomation, tmp_path: Path) -> None:
+    """An edited export updates the same rule and keeps its component ids."""
+    out = tmp_path / "rule.json"
+    assert runner.invoke(app, ["automation", "export", UUID, "-o", str(out)]).exit_code == 0
+    data = json.loads(out.read_text(encoding="utf-8"))
+    data["rule"]["description"] = "Runs once a month"
+    out.write_text(json.dumps(data), encoding="utf-8")
+
+    result = runner.invoke(app, ["automation", "update", UUID, "--input", str(out)])
+    assert result.exit_code == 0, result.output
+    kind, (uuid, payload) = fake.calls[-1]
+    assert (kind, uuid) == ("update", UUID)
+    assert payload["rule"]["description"] == "Runs once a month"
+    assert payload["rule"]["trigger"]["id"] == "1"
+    assert "Weekly check" in result.output
+
+
+@pytest.mark.usefixtures("fake")
+def test_update_from_stdin_json() -> None:
+    """`-i -` reads stdin; --json prints the API response."""
+    result = runner.invoke(
+        app, ["automation", "update", UUID, "-i", "-", "--json"], input=json.dumps(EXPORTED)
+    )
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {"ruleUuid": UUID}
+
+
+def test_update_refuses_other_rule(fake: FakeAutomation) -> None:
+    """A file exported from another rule stops before any request."""
+    result = runner.invoke(
+        app, ["automation", "update", "other-uuid", "-i", "-"], input=json.dumps(EXPORTED)
+    )
+    assert result.exit_code != 0
+    assert fake.calls == []
+    assert "not other-uuid" in str(result.exception) + result.output

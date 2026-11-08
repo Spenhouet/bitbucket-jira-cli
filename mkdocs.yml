@@ -197,6 +197,7 @@ nav:
           - disable: reference/automation/disable.md
           - export: reference/automation/export.md
           - import: reference/automation/import.md
+          - update: reference/automation/update.md
           - delete: reference/automation/delete.md
       - bj pipeline:
           - Overview: reference/pipeline/index.md
