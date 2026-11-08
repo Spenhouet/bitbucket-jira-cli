@@ -62,6 +62,22 @@ def _strip_component_ids(component: Any) -> None:
             _strip_component_ids(child)
 
 
+def _split_definition(definition: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Copy of the rule and its writable connection fields from an exported definition.
+
+    Accepts the full export (``{"rule": ..., "connections": ...}``) or a bare rule object.
+    """
+    data = copy.deepcopy(definition)
+    rule = data.get("rule") if isinstance(data.get("rule"), dict) else data
+    if not isinstance(rule, dict) or "trigger" not in rule:
+        msg = "not a rule definition: expected an object with a 'rule' and its 'trigger'"
+        raise ValueError(msg)
+    connections = (data.get("connections") if rule is not data else None) or []
+    return rule, [
+        {k: v for k, v in conn.items() if k in CONNECTION_WRITE_FIELDS} for conn in connections
+    ]
+
+
 def rule_create_payload(
     definition: dict[str, Any], *, name: str | None = None, enabled: bool = False
 ) -> dict[str, Any]:
@@ -71,11 +87,7 @@ def rule_create_payload(
     rule object. Drops the uuid, timestamps and component ids so the API
     assigns new ones, and sets the state explicitly (disabled by default).
     """
-    data = copy.deepcopy(definition)
-    rule = data.get("rule") if isinstance(data.get("rule"), dict) else data
-    if not isinstance(rule, dict) or "trigger" not in rule:
-        msg = "not a rule definition: expected an object with a 'rule' and its 'trigger'"
-        raise ValueError(msg)
+    rule, connections = _split_definition(definition)
     for field in READ_ONLY_RULE_FIELDS:
         rule.pop(field, None)
     _strip_component_ids(rule.get("trigger"))
@@ -85,11 +97,29 @@ def rule_create_payload(
         rule["name"] = name
     rule["state"] = "ENABLED" if enabled else "DISABLED"
     payload: dict[str, Any] = {"rule": rule}
-    connections = data.get("connections") if rule is not data else None
     if connections:
-        payload["connections"] = [
-            {k: v for k, v in conn.items() if k in CONNECTION_WRITE_FIELDS} for conn in connections
-        ]
+        payload["connections"] = connections
+    return payload
+
+
+def rule_update_payload(definition: dict[str, Any], uuid: str) -> dict[str, Any]:
+    """Turn an exported rule (``GET /rule/{uuid}``) into an update request body.
+
+    Accepts the full export or a bare rule object. Keeps the component ids, so
+    the API updates the existing components in place instead of replacing them,
+    and drops only the uuid and timestamps. Raises ``ValueError`` when the
+    definition names a different rule than ``uuid``.
+    """
+    rule, connections = _split_definition(definition)
+    source_uuid = rule.get("uuid")
+    if source_uuid and source_uuid != uuid:
+        msg = f"the definition is for rule {source_uuid}, not {uuid}"
+        raise ValueError(msg)
+    for field in READ_ONLY_RULE_FIELDS:
+        rule.pop(field, None)
+    payload: dict[str, Any] = {"rule": rule}
+    if connections:
+        payload["connections"] = connections
     return payload
 
 
@@ -173,6 +203,10 @@ class AutomationClient(BaseAsyncClient):
     async def create_rule(self, payload: dict[str, Any]) -> dict[str, Any]:
         response = await self.request("POST", "/rule", json=payload)
         return response.json()
+
+    async def update_rule(self, uuid: str, payload: dict[str, Any]) -> dict[str, Any]:
+        response = await self.request("PUT", f"/rule/{uuid}", json=payload)
+        return response.json() if response.content else {"ruleUuid": uuid}
 
     async def set_state(self, uuid: str, state: str) -> None:
         await self.request("PUT", f"/rule/{uuid}/state", json={"value": state})

@@ -19,6 +19,7 @@ import typer
 
 from bitbucket_jira_cli.api.automation import project_scope_ari
 from bitbucket_jira_cli.api.automation import rule_create_payload
+from bitbucket_jira_cli.api.automation import rule_update_payload
 from bitbucket_jira_cli.commands._common import emit
 from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.context import automation_client
@@ -244,6 +245,44 @@ def import_rule(
     if not emit(created, as_json=as_json, jq=jq):
         state = "enabled" if enabled else "disabled"
         success(f"Created rule {payload['rule'].get('name')} ({created.get('ruleUuid')}), {state}")
+
+
+@automation_app.command()
+def update(
+    uuid: UuidArg,
+    source: Annotated[
+        str,
+        typer.Option(
+            "--input",
+            "-i",
+            help="Rule definition file from `bj automation export`, or - for stdin.",
+        ),
+    ],
+    as_json: JsonOpt = False,
+    jq: JqOpt = None,
+) -> None:
+    """Change an existing rule to match an exported definition.
+
+    The rule keeps its UUID and history. Component ids from the export are
+    kept, so existing components are updated in place, and components without
+    an id are added. The name, description, state and the other rule fields
+    are taken from the file. The Automation API keeps the rule's labels as they
+    are, so label changes in the file have no effect.
+    """
+    config = load_config()
+    try:
+        payload = rule_update_payload(_read_definition(source), uuid)
+    except ValueError as exc:
+        raise BjError(str(exc)) from exc
+
+    async def _run() -> dict[str, Any]:
+        client, _ = await automation_client(config)
+        async with client:
+            return await client.update_rule(uuid, payload)
+
+    updated = run_with_status("Updating rule…", _run())
+    if not emit(updated, as_json=as_json, jq=jq):
+        success(f"Updated rule {payload['rule'].get('name')} ({uuid})")
 
 
 @automation_app.command()

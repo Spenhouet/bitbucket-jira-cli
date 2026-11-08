@@ -126,10 +126,11 @@ export BJ_JIRA_TOKEN=...        # Jira API token
   in big workspaces. `bj search commits` covers one repository (default: the
   current one) and scans its history locally; bound it with `--since`.
 - `bj automation` manages Jira automation rules (`list`, `view`, `enable`,
-  `disable`, `export`, `import`, `delete`). The Automation API needs an unscoped
-  Jira token and a Jira admin; with a scoped login, set `BJ_JIRA_TOKEN` to an
-  unscoped token. Copy a rule with `export`, edit the JSON, then `import`
-  (created disabled unless `--enable`).
+  `disable`, `export`, `import`, `update`, `delete`). The Automation API needs an
+  unscoped Jira token and a Jira admin; with a scoped login, set `BJ_JIRA_TOKEN`
+  to an unscoped token. Copy a rule with `export`, edit the JSON, then `import`
+  (created disabled unless `--enable`). Change a rule in place with `export`,
+  edit the JSON, then `update <uuid> --input <file>` (keeps UUID and history).
 - A failed auth check exits `1` (a normal failure), where `gh` uses `4`.
 
 ## Branch-key automation

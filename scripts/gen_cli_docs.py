@@ -162,7 +162,9 @@ DESCRIPTIONS: dict[str, str] = {
         "not match`. If your login uses a scoped token, set `BJ_JIRA_TOKEN` to an "
         "unscoped one for these commands. `export` and `import` copy a rule: "
         "`import` drops the source rule's UUID, timestamps and component ids and "
-        "creates the rule disabled unless you pass `--enable`."
+        "creates the rule disabled unless you pass `--enable`. `update` changes "
+        "an existing rule in place from an exported file and keeps its UUID, "
+        "component ids and history."
     ),
     "variable": (
         "Bitbucket Pipelines variables. Bitbucket models secrets and plaintext "
@@ -335,6 +337,12 @@ EXAMPLES: dict[str, list[str]] = {
         "bj automation export 0192e5ac-0e25-71de-ba7b-d972e6a2049a -o weekly.json",
         "jq '.rule.description = \"Runs once a year\"' weekly.json > yearly.json",
         'bj automation import yearly.json --name "Yearly check"',
+    ],
+    "automation update": [
+        "# Change a rule in place: export, change it with jq, update it",
+        "bj automation export 0192e5ac-0e25-71de-ba7b-d972e6a2049a -o rule.json",
+        "jq '.rule.description = \"Runs once a month\"' rule.json > changed.json",
+        "bj automation update 0192e5ac-0e25-71de-ba7b-d972e6a2049a --input changed.json",
     ],
     "automation disable": [
         "bj automation disable 0192e5ac-0e25-71de-ba7b-d972e6a2049a",
