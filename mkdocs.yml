@@ -101,6 +101,7 @@ nav:
       - Output formatting: guides/formatting.md
       - Environment: guides/environment.md
       - Exit codes: guides/exit-codes.md
+      - CI integration: guides/ci.md
   # gen:reference:start (managed by scripts/gen_cli_docs.py; do not edit by hand)
   - Command reference:
       - Overview: reference/index.md
