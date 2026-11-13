@@ -16,16 +16,18 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   publish:
-    name: Publish image to Docker Hub
+    name: Publish image to Docker Hub and GHCR
     runs-on: ubuntu-latest
     environment:
       name: dockerhub
       url: https://hub.docker.com/r/${{ vars.DOCKERHUB_IMAGE || 'spenhouet/bitbucket-jira-cli' }}
     env:
       IMAGE_NAME: ${{ vars.DOCKERHUB_IMAGE || 'spenhouet/bitbucket-jira-cli' }}
+      GHCR_IMAGE: ghcr.io/spenhouet/bitbucket-jira-cli
     steps:
       - name: Checkout release tag
         uses: actions/checkout@v7
@@ -44,11 +46,20 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: |
+            ${{ env.IMAGE_NAME }}
+            ${{ env.GHCR_IMAGE }}
           tags: |
             type=semver,pattern={{version}},value=${{ inputs.version }}
             type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version }}

@@ -54,6 +54,8 @@ docker pull spenhouet/bitbucket-jira-cli:latest
 docker run --rm spenhouet/bitbucket-jira-cli --help
 ```
 
+The same image is on the GitHub Container Registry as `ghcr.io/spenhouet/bitbucket-jira-cli`.
+
 Pin a version in pipelines. [CI integration](./guides/ci.md) shows the image in GitLab CI and Argo Workflows.
 
 ## Verify

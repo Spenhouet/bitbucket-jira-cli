@@ -34,12 +34,14 @@ bj config set jira.cloud_id "$(curl -s https://example.atlassian.net/_edge/tenan
 
 ## Docker image
 
-Each release is published to Docker Hub for `linux/amd64` and `linux/arm64`:
+Each release is published to Docker Hub and the GitHub Container Registry for `linux/amd64` and `linux/arm64`, with the same tags in both:
 
 ```text
 spenhouet/bitbucket-jira-cli:<version>
-spenhouet/bitbucket-jira-cli:latest
+ghcr.io/spenhouet/bitbucket-jira-cli:<version>
 ```
+
+`latest`, `<major>` and `<major>.<minor>` tags exist as well.
 
 The entry point is `bj`. The image runs as user `bj` (uid 1000) with the config under `/data/config` and includes `jq` for `--jq`. Pin a version in pipelines.
 
