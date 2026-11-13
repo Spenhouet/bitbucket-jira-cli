@@ -37,8 +37,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH" \
     HOME=/data/config \
-    XDG_CONFIG_HOME=/data/config \
-    BJ_CONFIG_PATH=/data/config/config.json
+    XDG_CONFIG_HOME=/data/config
+
+# jq for the --jq option
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends jq \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd --system --gid 1000 bj \
     && useradd  --system --uid 1000 --gid bj --home-dir /data/config --shell /usr/sbin/nologin bj \
