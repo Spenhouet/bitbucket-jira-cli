@@ -31,4 +31,4 @@ Token resolution order is env → OS keyring → `credentials.yml`; see
 [Configuration](./configuration.md). Because the two backends use separate
 credentials, you can supply one via the environment and the other via the
 keyring independently. For example, export `BJ_BITBUCKET_TOKEN` in CI while
-Jira stays logged out.
+Jira stays logged out. [CI integration](./ci.md) has complete pipeline examples.
