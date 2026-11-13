@@ -47,7 +47,7 @@ The entry point is `bj`. The image runs as user `bj` (uid 1000) with the config 
 
 ```bash
 docker run --rm -e BJ_JIRA_TOKEN -e BJ_PROMPT_DISABLED=1 --entrypoint sh \
-  spenhouet/bitbucket-jira-cli:1.11.2 -c '
+  spenhouet/bitbucket-jira-cli:1.11.3 -c '
     bj config set jira.site https://example.atlassian.net >/dev/null
     bj config set jira.email ci@example.com >/dev/null
     bj issue view DEMO-1 --json'
@@ -80,7 +80,7 @@ The entry point is cleared, so GitLab runs the job script in a shell.
 ```yaml
 release-record:
   image:
-    name: spenhouet/bitbucket-jira-cli:1.11.2
+    name: spenhouet/bitbucket-jira-cli:1.11.3
     entrypoint: [""]
   variables:
     BJ_PROMPT_DISABLED: "1"
@@ -101,7 +101,7 @@ An Argo Workflows step with the token from a Kubernetes Secret:
     parameters:
       - name: version
   script:
-    image: spenhouet/bitbucket-jira-cli:1.11.2
+    image: spenhouet/bitbucket-jira-cli:1.11.3
     command: [sh]
     env:
       - name: BJ_PROMPT_DISABLED

@@ -67,7 +67,7 @@ wheels = [
 
 [[package]]
 name = "bitbucket-jira-cli"
-version = "1.11.2"
+version = "1.11.3"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
