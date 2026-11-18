@@ -307,6 +307,7 @@ class BitbucketClient(BaseAsyncClient):
         response = await self.request(
             "GET",
             f"{self._pipe_base(workspace, repo_slug)}/{quote(uuid)}/steps/{quote(step_uuid)}/log",
+            headers={"Accept": "*/*"},
         )
         return response.text
 
