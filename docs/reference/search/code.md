@@ -24,9 +24,9 @@ bj search code [OPTIONS] QUERY
 | --- | --- |
 | `-W, --workspace <text>` | Workspace (default: configured). |
 | `-R, --repo <text>` | Restrict to a repository (REPO or WORKSPACE/REPO). |
-| `--language <text>` | Restrict to a language (lang:). |
-| `--extension <text>` | Restrict to a file extension (ext:). |
-| `--path, --filename <text>` | Restrict to a path or file name (path:). |
+| `--language <text>` | Restrict to a language, such as python. |
+| `--extension <text>` | Restrict to a file extension, such as py. |
+| `--path, --filename <text>` | Restrict to a path: folder or file names in order, or a pattern with * and ?. |
 | `-L, --limit <integer>` | Max results. _(default: 30)_ |
 | `--json` | Output raw JSON. |
 | `-q, --jq <text>` | Filter JSON with a jq expression. |

@@ -11,7 +11,6 @@ from typing import Annotated
 from typing import Any
 from typing import Literal
 from urllib.parse import quote
-from urllib.parse import urlparse
 
 import typer
 from rich.markup import escape
@@ -24,6 +23,7 @@ from bitbucket_jira_cli.config import Config
 from bitbucket_jira_cli.config import load_config
 from bitbucket_jira_cli.context import bitbucket_authorization
 from bitbucket_jira_cli.context import jira_client
+from bitbucket_jira_cli.errors import ApiError
 from bitbucket_jira_cli.errors import BjError
 from bitbucket_jira_cli.interaction import run_with_status
 from bitbucket_jira_cli.render import render_commit_list
@@ -31,6 +31,8 @@ from bitbucket_jira_cli.render import render_issue_list
 from bitbucket_jira_cli.render import render_pr_search_list
 from bitbucket_jira_cli.render import render_repo_list
 from bitbucket_jira_cli.ui import console
+
+HTTP_FORBIDDEN = 403
 
 search_app = typer.Typer(help="Search Bitbucket and Jira.", no_args_is_help=True)
 
@@ -90,6 +92,20 @@ def repos(
         render_repo_list(results)
 
 
+# Query modifiers of the old code search, still accepted in the query.
+_CODE_MODIFIERS = {"repo": "repository", "lang": "language", "ext": "extension", "path": "path"}
+# Attributes that take a `*`/`?` pattern; the others only match a value.
+_WILDCARD_ATTRIBUTES = ("repository", "path")
+
+
+def _code_filter(attribute: str, value: str) -> dict[str, str]:
+    """One code search filter; a `*` or `?` makes a repository or path filter a pattern."""
+    if attribute == "extension":
+        value = value.lstrip(".")
+    pattern = attribute in _WILDCARD_ATTRIBUTES and any(char in value for char in "*?")
+    return {"attribute": attribute, "wildcard" if pattern else "eq": value}
+
+
 def _code_query(
     query: str,
     *,
@@ -97,61 +113,80 @@ def _code_query(
     language: str | None,
     extension: str | None,
     path: str | None,
-) -> str:
-    """Append gh-style filter flags to the query as Bitbucket search modifiers."""
-    parts = [query]
-    if repo:
-        parts.append(f"repo:{repo}")
-    if language:
-        parts.append(f"lang:{language}")
-    if extension:
-        parts.append(f"ext:{extension.lstrip('.')}")
-    if path:
-        parts.append(f"path:{path}")
-    return " ".join(parts)
+) -> tuple[str, dict[str, Any] | None]:
+    """Search term and filters for the code search.
+
+    The filter flags and the `repo:`, `lang:`, `ext:` and `path:` modifiers in the
+    query become filters. The rest of the query is the search term.
+    """
+    words: list[str] = []
+    filters: list[dict[str, str]] = []
+    for word in query.split():
+        key, colon, value = word.partition(":")
+        if colon and value and key in _CODE_MODIFIERS:
+            filters.append(_code_filter(_CODE_MODIFIERS[key], value))
+        else:
+            words.append(word)
+    flags = (("repository", repo), ("language", language), ("extension", extension), ("path", path))
+    filters.extend(_code_filter(attribute, value) for attribute, value in flags if value)
+    term = " ".join(words)
+    if not term:
+        msg = "The query needs a search term next to the filters."
+        raise BjError(msg)
+    if not filters:
+        return term, None
+    return term, filters[0] if len(filters) == 1 else {"and": filters}
 
 
 def _hit_repo(hit: dict[str, Any]) -> str:
-    """Repository full name of a code search hit.
+    """Repository of a code search hit as WORKSPACE/REPO."""
+    repo = hit.get("repository") or {}
+    ns, name = repo.get("ns"), repo.get("name")
+    return f"{ns}/{name}" if ns and name else str(name or "")
 
-    Falls back to the file's API link when the response has no repository object.
+
+def _highlight(text: str, ranges: list[tuple[int, int]]) -> str:
+    """Rich markup of a line with the given column ranges in bold yellow."""
+    parts: list[str] = []
+    position = 0
+    for start, end in sorted(ranges):
+        if start < position:
+            continue
+        parts.append(escape(text[position:start]))
+        parts.append(f"[bold yellow]{escape(text[start:end])}[/bold yellow]")
+        position = end
+    parts.append(escape(text[position:]))
+    return "".join(parts)
+
+
+def _match_lines(hit: dict[str, Any], term: str) -> list[tuple[int, str]]:
+    """The matching lines of a hit as (line number, Rich markup) pairs.
+
+    Bitbucket marks only whole-word matches, so a line that contains the term
+    without a mark is shown as well.
     """
-    file_info = hit.get("file", {})
-    name = file_info.get("commit", {}).get("repository", {}).get("full_name")
-    if name:
-        return str(name)
-    href = file_info.get("links", {}).get("self", {}).get("href", "")
-    match = re.search(r"/repositories/([^/]+)/([^/]+)/", urlparse(href).path)
-    return f"{match.group(1)}/{match.group(2)}" if match else ""
-
-
-def _match_lines(hit: dict[str, Any]) -> list[tuple[int, str]]:
-    """The matching lines of a hit as (line number, Rich markup) pairs."""
     lines: list[tuple[int, str]] = []
-    for content in hit.get("content_matches", []):
-        for line in content.get("lines", []):
-            segments = line.get("segments", [])
-            if not any(seg.get("match") for seg in segments):
-                continue
-            text = "".join(
-                f"[bold yellow]{escape(seg.get('text', ''))}[/bold yellow]"
-                if seg.get("match")
-                else escape(seg.get("text", ""))
-                for seg in segments
-            )
-            lines.append((int(line.get("line", 0)), text.strip()))
+    needle = term.lower()
+    for chunk in hit.get("matched_chunks") or []:
+        first = int((chunk.get("line_range") or {}).get("start", 1))
+        ranges: dict[int, list[tuple[int, int]]] = {}
+        for line, start, end in chunk.get("matched_ranges") or []:
+            ranges.setdefault(int(line), []).append((int(start), int(end)))
+        marked = {int(n) for n in chunk.get("matched_line_numbers") or []} | set(ranges)
+        for offset, text in enumerate(str(chunk.get("source_code", "")).splitlines()):
+            number = first + offset
+            if number in marked or needle in text.lower():
+                lines.append((number, _highlight(text, ranges.get(number, [])).strip()))
     return lines
 
 
-def render_code_hits(results: list[dict[str, Any]]) -> None:
+def render_code_hits(results: list[dict[str, Any]], term: str) -> None:
     if not results:
         console.print("[dim]No matches.[/dim]")
         return
     for hit in results:
-        repo = _hit_repo(hit)
-        path = hit.get("file", {}).get("path", "")
-        console.print(f"[cyan]{escape(repo)}[/cyan] {escape(path)}")
-        for number, text in _match_lines(hit):
+        console.print(f"[cyan]{escape(_hit_repo(hit))}[/cyan] {escape(str(hit.get('path', '')))}")
+        for number, text in _match_lines(hit, term):
             console.print(f"  [dim]{number}:[/dim] {text}")
 
 
@@ -161,14 +196,18 @@ def code(
     workspace: WsOpt = None,
     repo: RepoOpt = None,
     language: Annotated[
-        str | None, typer.Option("--language", help="Restrict to a language (lang:).")
+        str | None, typer.Option("--language", help="Restrict to a language, such as python.")
     ] = None,
     extension: Annotated[
-        str | None, typer.Option("--extension", help="Restrict to a file extension (ext:).")
+        str | None, typer.Option("--extension", help="Restrict to a file extension, such as py.")
     ] = None,
     path: Annotated[
         str | None,
-        typer.Option("--path", "--filename", help="Restrict to a path or file name (path:)."),
+        typer.Option(
+            "--path",
+            "--filename",
+            help="Restrict to a path: folder or file names in order, or a pattern with * and ?.",
+        ),
     ] = None,
     limit: LimitOpt = 30,
     as_json: JsonOpt = False,
@@ -176,21 +215,35 @@ def code(
 ) -> None:
     """Search code across a workspace.
 
-    The filter flags are added to the query as Bitbucket search modifiers, so
-    `--language sql` is the same as writing `lang:sql` in the query.
+    Searches the default branch of every repository you can read. The filter
+    flags narrow the search; `repo:`, `lang:`, `ext:` and `path:` in the query
+    work the same. `--repo` and `--path` take patterns with `*` and `?`.
+
+    Needs an API token or access token: Bitbucket rejects app passwords for
+    code search.
     """
     config = load_config()
     workspace, repo = _split_repo(repo, workspace)
     ws = resolve_workspace(workspace, config.bitbucket.workspace)
-    search_query = _code_query(query, repo=repo, language=language, extension=extension, path=path)
+    term, filters = _code_query(query, repo=repo, language=language, extension=extension, path=path)
 
     async def _run() -> list[dict[str, Any]]:
         async with _bb(config) as client:
-            return await client.search_code(ws, search_query, limit=limit)
+            return await client.search_code(ws, term, filters=filters, limit=limit)
 
-    results = run_with_status("Searching code…", _run())
+    try:
+        results = run_with_status("Searching code…", _run())
+    except ApiError as exc:
+        if exc.status != HTTP_FORBIDDEN:
+            raise
+        msg = (
+            f"{exc}. Code search needs an API token with the scopes "
+            "read:repository:bitbucket and read:workspace:bitbucket, or an access token. "
+            "Bitbucket rejects app passwords for it."
+        )
+        raise BjError(msg) from exc
     if not emit(results, as_json=as_json, jq=jq):
-        render_code_hits(results)
+        render_code_hits(results, term)
 
 
 # -- pull requests ----------------------------------------------------------

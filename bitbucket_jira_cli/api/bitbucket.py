@@ -538,18 +538,41 @@ class BitbucketClient(BaseAsyncClient):
 
     # -- search -------------------------------------------------------------
     async def search_code(
-        self, workspace: str, query: str, *, limit: int = 30
+        self,
+        workspace: str,
+        term: str,
+        *,
+        filters: dict[str, Any] | None = None,
+        limit: int = 30,
     ) -> list[dict[str, Any]]:
-        return await self._paginate(
-            f"/workspaces/{workspace}/search/code",
-            # The repository is left out of each hit unless asked for explicitly.
-            params={
-                "search_query": query,
-                "pagelen": min(limit, 50),
-                "fields": "+values.file.commit.repository",
-            },
-            limit=limit,
-        )
+        """Matched files of the workspace code search, each with its ``repository``.
+
+        Uses ``POST /workspaces/{workspace}/codesearch`` and follows its cursor
+        pagination until ``limit`` files are collected or no page is left.
+        """
+        query: dict[str, Any] = {"search_term": term}
+        if filters:
+            query["filters"] = filters
+        body: dict[str, Any] = {"query": query}
+        files: list[dict[str, Any]] = []
+        while True:
+            body["config"] = {"max_results": min(limit - len(files), 100)}
+            response = await self.request(
+                "POST", f"/workspaces/{workspace}/codesearch", json=body
+            )
+            payload = response.json()
+            # Files point to their repository by id; attach the repository itself.
+            repos = {repo.get("id"): repo for repo in payload.get("repositories") or []}
+            files.extend(
+                {**match, "repository": repos.get(match.get("repositoryId"), {})}
+                for match in payload.get("matched_files") or []
+            )
+            pagination = payload.get("pagination") or {}
+            cursor = pagination.get("next_cursor")
+            if len(files) >= limit or not pagination.get("has_more") or not cursor:
+                return files[:limit]
+            body["request_id"] = payload.get("id")
+            body["pagination"] = {"next_cursor": cursor}
 
     # -- generic passthrough (bj api) --------------------------------------
     async def raw(
