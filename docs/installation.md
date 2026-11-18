@@ -29,7 +29,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://uvx.sh/bitbucket-jira-cli/ins
 Installing a specific version:
 
 ```bash
-curl -LsSf uvx.sh/bitbucket-jira-cli/1.11.3/install.sh | sh
+curl -LsSf uvx.sh/bitbucket-jira-cli/1.11.4/install.sh | sh
 ```
 
 ## Alternatives
