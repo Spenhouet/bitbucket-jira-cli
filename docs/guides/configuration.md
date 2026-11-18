@@ -88,6 +88,7 @@ Which scope each command family needs:
 | Commands | Scope |
 | --- | --- |
 | everyday reads, PRs, clone | `read:*`, `read/write:pullrequest`, `read:repository` |
+| `search code` | `read:repository:bitbucket` and `read:workspace:bitbucket` (app passwords are rejected) |
 | `repo create` / `edit` / `rename` / `fork` | `write:repository:bitbucket` |
 | `ruleset list` (branch restrictions) | `admin:repository:bitbucket` |
 | `repo delete` | `delete:repository:bitbucket` |

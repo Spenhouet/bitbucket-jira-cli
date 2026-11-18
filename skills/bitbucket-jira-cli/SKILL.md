@@ -120,8 +120,10 @@ export BJ_JIRA_TOKEN=...        # Jira API token
   image, a file) is written to stdout as raw bytes, as with `gh api`, so
   redirect it into a file.
 - `bj search code` and `bj search issues` take gh-style filter flags and turn
-  them into Bitbucket search modifiers (`lang:`, `ext:`, `path:`, `repo:`) or
-  JQL. On `bj search`, the workspace flag is `-W`; `-w` is `--web` as in `gh`.
+  them into code search filters or JQL. `bj search code` searches the default
+  branch; `--repo` and `--path` take `*`/`?` patterns, and `lang:`, `ext:`,
+  `path:`, `repo:` in the query work as filters too. It needs an API token, not
+  an app password. On `bj search`, the workspace flag is `-W`; `-w` is `--web` as in `gh`.
   `bj search prs` without `--author` queries every repository, so it is slower
   in big workspaces. `bj search commits` covers one repository (default: the
   current one) and scans its history locally; bound it with `--since`.
